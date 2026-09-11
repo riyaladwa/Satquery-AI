@@ -3,7 +3,11 @@ from pathlib import Path
 from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DATA_DIR = BASE_DIR.parent / "data"
+# In Vercel serverless runtime or AWS Lambda, the filesystem is read-only except for /tmp
+if os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+    DATA_DIR = Path("/tmp/satquery_data")
+else:
+    DATA_DIR = BASE_DIR.parent / "data"
 
 class Settings(BaseModel):
     PROJECT_NAME: str = "SatQuery AI"
@@ -36,4 +40,8 @@ settings = Settings()
 
 # Ensure directories exist
 for p in [settings.DATA_DIR, settings.UPLOAD_DIR, settings.DEMO_DIR, settings.REPORT_DIR, settings.PREVIEW_DIR]:
-    p.mkdir(parents=True, exist_ok=True)
+    try:
+        p.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+

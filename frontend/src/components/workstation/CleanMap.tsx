@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { ImageRecord, EvidenceRegion, AreaCalculationResult } from '../../types';
-import { api } from '../../services/api';
+import { api, resolveAssetUrl } from '../../services/api';
 import { Maximize2, Crosshair, Ruler, Trash2, Loader2, Check } from 'lucide-react';
 
 interface CleanMapProps {
@@ -252,7 +252,7 @@ export const CleanMap: React.FC<CleanMapProps> = ({
       const bounds: L.LatLngBoundsExpression = [[minLat, minLon], [maxLat, maxLon]];
 
       if (primaryImage.preview_url && activeViewMode !== 'secondary') {
-        const overlay = L.imageOverlay(primaryImage.preview_url, bounds, {
+        const overlay = L.imageOverlay(resolveAssetUrl(primaryImage.preview_url), bounds, {
           opacity: 0.88,
           interactive: false
         }).addTo(map);
@@ -278,7 +278,7 @@ export const CleanMap: React.FC<CleanMapProps> = ({
       if (boundsArr) {
         const [minLat, minLon, maxLat, maxLon] = boundsArr;
         const bounds: L.LatLngBoundsExpression = [[minLat, minLon], [maxLat, maxLon]];
-        const overlay = L.imageOverlay(secondaryImage.preview_url, bounds, {
+        const overlay = L.imageOverlay(resolveAssetUrl(secondaryImage.preview_url), bounds, {
           opacity: 0.88,
           interactive: false
         }).addTo(map);

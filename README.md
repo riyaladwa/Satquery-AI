@@ -192,6 +192,40 @@ npm run dev
 
 ---
 
+## 🚀 Vercel Full-Stack Deployment
+
+SatQuery AI is preconfigured for **unified full-stack deployment** on [Vercel](https://vercel.com). Both the React 19 + Vite frontend and the FastAPI Python backend run together under a single domain.
+
+### Architecture on Vercel
+
+```
+                               ┌─── /api/* ──────────► [api/index.py] (FastAPI Serverless)
+                               ├─── /previews/* ─────► [api/index.py] (Static Preview Rasters)
+User Request ──► [Vercel CDN] ─┼─── /reports-files/* ─► [api/index.py] (Generated PDFs)
+                               ├─── /docs ───────────► [api/index.py] (Swagger UI)
+                               └─── /* (All Others) ─► [frontend/dist] (React 19 SPA)
+```
+
+### Steps to Deploy on Vercel
+
+1. **Import Repository**:
+   - Go to your [Vercel Dashboard](https://vercel.com/new).
+   - Click **Import** on `https://github.com/riyaladwa/Satquery-AI.git`.
+2. **Project Settings**:
+   - **Framework Preset**: `Vite` (or `Other`)
+   - **Root Directory**: `./` (leave as root default)
+   - **Build Command**: `cd frontend && npm install && npm run build` (automatically detected via `vercel.json`)
+   - **Output Directory**: `frontend/dist` (automatically detected via `vercel.json`)
+3. **Environment Variables (Optional)**:
+   - `GEMINI_API_KEY`: *(Optional)* Your Google Gemini Vision API key.
+   - `VITE_API_URL`: *(Optional)* Leave blank for unified same-domain deployment. Set to external URL (e.g. `https://my-backend.onrender.com`) if deploying the backend separately on Render or Railway.
+4. **Deploy**:
+   - Click **Deploy**. Vercel will build the frontend into `frontend/dist` and initialize the Python serverless function in `api/index.py`.
+   - Your frontend loads instantly at `https://<your-project>.vercel.app/` with live API calls routed to `/api/...`.
+
+---
+
+
 ## 📡 REST API Reference
 
 | Endpoint | Method | Description |

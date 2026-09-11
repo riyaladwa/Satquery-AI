@@ -1,0 +1,20 @@
+{
+  "name": "satquery-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multimodal Remote Sensing Vision-Language Geospatial Analysis Platform",
+  "scripts": {
+    "dev": "bash dev.sh",
+    "build": "cd frontend && npm install && npm run build"
+  },
+  "keywords": [
+    "remote-sensing",
+    "geospatial",
+    "satellite",
+    "fastapi",
+    "react",
+    "vite"
+  ],
+  "author": "SatQuery AI Team",
+  "license": "Apache-2.0"
+}

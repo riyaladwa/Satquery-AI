@@ -14,7 +14,14 @@ import {
   SessionDetail
 } from '../types';
 
-const API_BASE = '/api';
+const BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+const API_BASE = `${BASE_URL}/api`;
+
+export const resolveAssetUrl = (url?: string): string => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 
 export const api = {
   async getHealth() {

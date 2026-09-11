@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { ImageRecord, EvidenceRegion } from '../../types';
 import { RotateCcw, Crosshair, PenTool } from 'lucide-react';
-import { api } from '../../services/api';
+import { api, resolveAssetUrl } from '../../services/api';
 
 interface SatelliteMapProps {
   image?: ImageRecord | null;
@@ -144,7 +144,7 @@ export const SatelliteMap: React.FC<SatelliteMapProps> = ({
       const bounds: L.LatLngBoundsExpression = [[minLat, minLon], [maxLat, maxLon]];
 
       if (image.preview_url) {
-        imageOverlayRef.current = L.imageOverlay(image.preview_url, bounds, {
+        imageOverlayRef.current = L.imageOverlay(resolveAssetUrl(image.preview_url), bounds, {
           opacity: 0.85,
           interactive: false
         }).addTo(map);
