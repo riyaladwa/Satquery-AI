@@ -1,0 +1,100 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "explore": "Explore",
+    "compare": "Compare",
+    "investigate": "Investigate",
+    "disaster": "Disaster Analysis",
+    "agriculture": "Agriculture",
+    "urban": "Urban Growth",
+    "monitoring": "Monitoring",
+    "history": "History",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "topbar": {
+    "search": "Search imagery, projects, or geographic coordinates...",
+    "systemStatus": "System Active",
+    "modelsOnline": "8 Models Ready",
+    "voiceReady": "Voice Engine Ready",
+    "profile": "Senior GIS Analyst"
+  },
+  "dashboard": {
+    "title": "Geospatial Intelligence Command Center",
+    "subtitle": "Multimodal remote-sensing surveillance, agentic reasoning, and evidence-grounded spatial analysis",
+    "newAnalysis": "New Analysis",
+    "compareImagery": "Compare Imagery",
+    "investigateArea": "Investigate Area",
+    "generateReport": "Generate Report",
+    "quickActions": "Quick Actions",
+    "recentAnalyses": "Recent Analyses",
+    "activeProjects": "Active Surveillance Projects",
+    "systemStatus": "Subsystem Health",
+    "aiModels": "AI Vision-Language Models",
+    "processingEngine": "Geospatial Raster Engine",
+    "mapService": "Satellite Tile Layer",
+    "storage": "Local & Cloud Archive",
+    "totalImages": "Total Scenes",
+    "activeSessions": "Active Sessions",
+    "evidenceDelineated": "Evidence Regions",
+    "avgConfidence": "Average Confidence"
+  },
+  "explore": {
+    "imageMetadata": "Imagery & Telemetry",
+    "qualityCheck": "Quality Verification",
+    "mapView": "Satellite Viewport",
+    "aiAssistant": "Vision-Language Assistant",
+    "askPlaceholder": "Ask a geospatial question (e.g., \"Has urban built-up area increased?\")...",
+    "listening": "Listening for query...",
+    "processing": "Processing agentic pipeline...",
+    "suggestionsTitle": "Contextual Intelligence Queries",
+    "selectImagery": "Select Satellite Scene",
+    "uploadButton": "Upload Imagery",
+    "drawPolygon": "Measure Polygon Area",
+    "clearDraw": "Clear Measurement",
+    "generatePdf": "Generate PDF Intelligence Report"
+  },
+  "suggestions": [
+    "Describe this satellite scene in detail",
+    "Highlight water bodies and calculate coverage",
+    "Show built-up areas and concrete structures",
+    "Has urban growth occurred in this region?",
+    "Detect agricultural parcels and crop health",
+    "Calculate total built-up area in hectares",
+    "Are there roads connecting the settlements?"
+  ],
+  "answers": {
+    "what": "What was detected?",
+    "where": "Where is it located?",
+    "whyTrust": "Why trust this assessment?",
+    "how": "Model & Tool Selection",
+    "certainty": "Confidence & Reliability",
+    "modelConfidence": "Model Confidence",
+    "qualityReliability": "Data Reliability",
+    "timeline": "Agent Execution Summary",
+    "clickToZoom": "Click evidence card to zoom map to region",
+    "speechPlay": "Play Voice Summary",
+    "speechPause": "Pause",
+    "speechStop": "Stop"
+  },
+  "compare": {
+    "title": "Multi-Temporal & Cross-Sensor Comparison",
+    "subtitle": "Bi-temporal change detection and Optical + SAR all-weather sensor fusion",
+    "modeBitemporal": "Bi-Temporal Change",
+    "modeOpticalSar": "Optical vs SAR Fusion",
+    "sideBySide": "Side by Side",
+    "slider": "Swipe Slider",
+    "changeHeatmap": "Change Heatmap",
+    "changePercent": "Detected Change",
+    "majorType": "Dominant Transition",
+    "sensorAgreement": "Sensor Agreement"
+  },
+  "quality": {
+    "validFormat": "Valid Raster Format",
+    "georeferenced": "Georeferenced",
+    "crs": "CRS Detected",
+    "resolution": "Resolution (GSD)",
+    "cloudCover": "Cloud Cover",
+    "contrast": "Radiometric Contrast"
+  }
+}
