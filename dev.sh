@@ -2,27 +2,26 @@
 set -e
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKEND_DIR="$ROOT_DIR/backend"
-FRONTEND_DIR="$ROOT_DIR/frontend"
+SERVER_DIR="$ROOT_DIR/server"
 
 echo "========================================================"
 echo "🛰️  SatQuery AI — Full-Stack Workstation Startup"
 echo "========================================================"
 
 # 1. Setup Python Virtual Environment
-if [ ! -d "$BACKEND_DIR/venv" ]; then
+if [ ! -d "$SERVER_DIR/venv" ]; then
     echo "Creating Python virtual environment..."
-    python3 -m venv "$BACKEND_DIR/venv"
-    source "$BACKEND_DIR/venv/bin/activate"
-    pip install -r "$BACKEND_DIR/requirements.txt"
+    python3 -m venv "$SERVER_DIR/venv"
+    source "$SERVER_DIR/venv/bin/activate"
+    pip install -r "$SERVER_DIR/requirements.txt"
 else
-    source "$BACKEND_DIR/venv/bin/activate"
+    source "$SERVER_DIR/venv/bin/activate"
 fi
 
 # 2. Check Node Modules
-if [ ! -d "$FRONTEND_DIR/node_modules" ]; then
+if [ ! -d "$ROOT_DIR/node_modules" ]; then
     echo "Installing frontend dependencies..."
-    (cd "$FRONTEND_DIR" && npm install)
+    (cd "$ROOT_DIR" && npm install)
 fi
 
 # Kill any existing processes on 8000 or 5173
@@ -42,7 +41,7 @@ trap cleanup SIGINT SIGTERM EXIT
 echo "🚀 Starting FastAPI Backend on http://127.0.0.1:8000 ..."
 (
     cd "$ROOT_DIR"
-    PYTHONPATH="$BACKEND_DIR" python3 "$BACKEND_DIR/app/main.py"
+    PYTHONPATH="$SERVER_DIR" "$SERVER_DIR/venv/bin/python" "$SERVER_DIR/main.py"
 ) &
 BACKEND_PID=$!
 
@@ -59,7 +58,7 @@ done
 # 4. Start Frontend Vite Dev Server (Port 5173)
 echo "⚡ Starting Vite Frontend on http://localhost:5173 ..."
 (
-    cd "$FRONTEND_DIR"
+    cd "$ROOT_DIR"
     npm run dev
 ) &
 FRONTEND_PID=$!

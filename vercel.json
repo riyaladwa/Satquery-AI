@@ -1,32 +1,45 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "rewrites": [
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.py"
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     },
     {
-      "source": "/previews/(.*)",
-      "destination": "/api/index.py"
+      "src": "server/main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/server/main.py"
     },
     {
-      "source": "/reports-files/(.*)",
-      "destination": "/api/index.py"
+      "src": "/previews/(.*)",
+      "dest": "/server/main.py"
     },
     {
-      "source": "/docs",
-      "destination": "/api/index.py"
+      "src": "/reports-files/(.*)",
+      "dest": "/server/main.py"
     },
     {
-      "source": "/openapi.json",
-      "destination": "/api/index.py"
+      "src": "/docs",
+      "dest": "/server/main.py"
     },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/openapi.json",
+      "dest": "/server/main.py"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }

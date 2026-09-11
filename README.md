@@ -63,7 +63,44 @@ flowchart TD
 
 ---
 
+## 📂 Repository Hierarchy
+
+The repository follows a clean, single-root full-stack structure:
+
+```text
+Satquery-AI/
+├── public/                  # Public static assets (favicons, SVGs)
+├── server/                  # FastAPI Python backend
+│   ├── app/                 # API routers, agents, database, geospatial engines
+│   ├── tests/               # Pytest test suite
+│   ├── requirements.txt     # Python backend dependencies
+│   └── main.py              # Server entry point & ASGI application
+├── src/                     # React 19 + TypeScript + Vite frontend
+│   ├── components/          # Leaflet maps, workstation drawers, modals
+│   ├── pages/               # Workstation, Explore, Compare, MyWork, Reports
+│   ├── services/            # Axios API client & asset resolver
+│   ├── types/               # TypeScript data models
+│   └── App.tsx              # Main application shell & router
+├── data/                    # GeoTIFF satellite rasters & demo data
+│   └── demo/                # Multi-sensor satellite rasters
+├── .env.example             # Environment variables template
+├── .gitignore
+├── LICENSE                  # MIT License
+├── README.md                # Documentation & architecture
+├── dev.sh                   # Concurrent local runner
+├── index.html               # Frontend HTML root
+├── package.json             # Root npm dependencies & build scripts
+├── package-lock.json
+├── requirements.txt         # Root Python requirements
+├── tsconfig.json            # TypeScript configuration
+├── vercel.json              # Unified Vercel serverless reverse proxy
+└── vite.config.ts           # Vite configuration & dev proxy
+```
+
+---
+
 ## 🌟 Core Capabilities & Innovations
+
 
 ### 1. 🛰️ Multimodal Satellite Ingestion & Inspection
 - **Supported Formats**: Ingests GeoTIFF (`.tif`, `.tiff`), PNG, and JPEG.
@@ -172,20 +209,19 @@ Once running:
 #### 1. Backend Setup
 ```bash
 # From repository root:
-source backend/venv/bin/activate || python3 -m venv backend/venv && source backend/venv/bin/activate
-pip install -r backend/requirements.txt
+source server/venv/bin/activate || python3 -m venv server/venv && source server/venv/bin/activate
+pip install -r requirements.txt
 
 # Run automated tests
-PYTHONPATH=backend backend/venv/bin/pytest backend/tests/
+PYTHONPATH=server server/venv/bin/pytest server/tests/
 
 # Start FastAPI server
-PYTHONPATH=backend python3 backend/app/main.py
+PYTHONPATH=server python3 server/main.py
 ```
 
 #### 2. Frontend Setup
 ```bash
-# In a separate terminal tab:
-cd frontend
+# From repository root:
 npm install
 npm run dev
 ```
@@ -199,11 +235,11 @@ SatQuery AI is preconfigured for **unified full-stack deployment** on [Vercel](h
 ### Architecture on Vercel
 
 ```
-                               ┌─── /api/* ──────────► [api/index.py] (FastAPI Serverless)
-                               ├─── /previews/* ─────► [api/index.py] (Static Preview Rasters)
-User Request ──► [Vercel CDN] ─┼─── /reports-files/* ─► [api/index.py] (Generated PDFs)
-                               ├─── /docs ───────────► [api/index.py] (Swagger UI)
-                               └─── /* (All Others) ─► [frontend/dist] (React 19 SPA)
+                               ┌─── /api/* ──────────► [server/main.py] (FastAPI Serverless)
+                               ├─── /previews/* ─────► [server/main.py] (Static Preview Rasters)
+User Request ──► [Vercel CDN] ─┼─── /reports-files/* ─► [server/main.py] (Generated PDFs)
+                               ├─── /docs ───────────► [server/main.py] (Swagger UI)
+                               └─── /* (All Others) ─► [dist/index.html] (React 19 SPA)
 ```
 
 ### Steps to Deploy on Vercel
@@ -212,18 +248,19 @@ User Request ──► [Vercel CDN] ─┼─── /reports-files/* ─► [api
    - Go to your [Vercel Dashboard](https://vercel.com/new).
    - Click **Import** on `https://github.com/riyaladwa/Satquery-AI.git`.
 2. **Project Settings**:
-   - **Framework Preset**: `Vite` (or `Other`)
+   - **Framework Preset**: `Vite` (automatically detected)
    - **Root Directory**: `./` (leave as root default)
-   - **Build Command**: `cd frontend && npm install && npm run build` (automatically detected via `vercel.json`)
-   - **Output Directory**: `frontend/dist` (automatically detected via `vercel.json`)
+   - **Build Command**: `tsc -b && vite build` (or `npm run build`)
+   - **Output Directory**: `dist` (automatically detected via `vercel.json`)
 3. **Environment Variables (Optional)**:
    - `GEMINI_API_KEY`: *(Optional)* Your Google Gemini Vision API key.
    - `VITE_API_URL`: *(Optional)* Leave blank for unified same-domain deployment. Set to external URL (e.g. `https://my-backend.onrender.com`) if deploying the backend separately on Render or Railway.
 4. **Deploy**:
-   - Click **Deploy**. Vercel will build the frontend into `frontend/dist` and initialize the Python serverless function in `api/index.py`.
+   - Click **Deploy**. Vercel will build the frontend into `dist` and initialize the Python serverless function in `server/main.py`.
    - Your frontend loads instantly at `https://<your-project>.vercel.app/` with live API calls routed to `/api/...`.
 
 ---
+
 
 
 ## 📡 REST API Reference
