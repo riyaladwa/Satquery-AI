@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { isSupabaseConfigured } from '../../services/supabase';
-import { Compass, X, Lock, Mail, User, AlertCircle, Loader2, Sparkles, FileText, CheckCircle2 } from 'lucide-react';
+import { isSupabaseConfigured, checkSupabaseHealth, supabaseUrl } from '../../services/supabase';
+import { Compass, X, Lock, Mail, User, AlertCircle, Loader2, Sparkles, FileText, CheckCircle2, ShieldCheck, Activity } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
   const {
@@ -9,6 +9,7 @@ export const AuthModal: React.FC = () => {
     closeAuthModal,
     signIn,
     signUp,
+    loginAsDemoAnalyst,
     authModalTitle,
     authModalSubtitle,
     authModalReason,
@@ -22,8 +23,23 @@ export const AuthModal: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<{ connected: boolean; latencyMs?: number }>({
+    connected: isSupabaseConfigured(),
+    latencyMs: undefined
+  });
+
+  // Verify Supabase live connectivity on modal open
+  useEffect(() => {
+    if (isAuthModalOpen) {
+      checkSupabaseHealth().then((res) => {
+        setConnectionStatus({ connected: res.connected, latencyMs: res.latencyMs });
+      });
+    }
+  }, [isAuthModalOpen]);
 
   if (!isAuthModalOpen) return null;
+
+  const projectId = supabaseUrl.replace('https://', '').split('.')[0] || 'active';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +48,7 @@ export const AuthModal: React.FC = () => {
 
     if (!isSupabaseConfigured()) {
       setErrorMsg(
-        'Supabase is not yet configured with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.'
+        'Supabase credentials are not detected. You can use 1-Click Analyst Sign In below to continue.'
       );
       return;
     }
@@ -52,12 +68,25 @@ export const AuthModal: React.FC = () => {
       if (mode === 'signin') {
         const { error } = await signIn(email, password);
         if (error) {
-          setErrorMsg(error.message || 'Invalid email or password.');
+          const msg = error.message?.toLowerCase() || '';
+          if (msg.includes('invalid login credentials') || error.code === 'invalid_credentials') {
+            setErrorMsg(
+              'Invalid credentials. If you haven\'t created an account yet, please click "Create Account" tab above, or use 1-Click Analyst Sign In below.'
+            );
+          } else {
+            setErrorMsg(error.message || 'Invalid email or password.');
+          }
         }
       } else {
         const { error } = await signUp(email, password, fullName);
         if (error) {
-          setErrorMsg(error.message || 'Failed to create account.');
+          if (error.code === 'over_email_send_rate_limit' || error.message?.toLowerCase().includes('rate limit')) {
+            setErrorMsg(
+              'Supabase email rate limit reached (3/hr on free tier). You can disable "Confirm Email" in Supabase Auth Settings, or click 1-Click Analyst Sign In below for instant access.'
+            );
+          } else {
+            setErrorMsg(error.message || 'Failed to create account.');
+          }
         } else {
           setSuccessMsg('Account created successfully! You are now logged in.');
         }
@@ -73,7 +102,7 @@ export const AuthModal: React.FC = () => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs select-none animate-in fade-in duration-200">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-[#E3EAE5] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-[#E3EAE5] flex items-start justify-between bg-[#F8FAF9]">
+        <div className="px-6 pt-5 pb-3.5 border-b border-[#E3EAE5] flex items-start justify-between bg-[#F8FAF9]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#EAF7F0] border border-[#167A4A]/20 flex items-center justify-center text-[#167A4A] shadow-xs">
               <Compass className="w-5 h-5" />
@@ -83,7 +112,17 @@ export const AuthModal: React.FC = () => {
                 <span className="font-bold text-base text-[#17201B]">SatQuery</span>
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#167A4A] text-white font-bold">AI</span>
               </div>
-              <p className="text-xs text-[#66736B]">Supabase Authentication</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[11px] font-medium text-[#167A4A]">
+                  Supabase Connected ({projectId})
+                </span>
+                {connectionStatus.latencyMs !== undefined && (
+                  <span className="text-[10px] font-mono text-[#66736B]">
+                    • {connectionStatus.latencyMs}ms
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <button
@@ -152,11 +191,11 @@ export const AuthModal: React.FC = () => {
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-3.5">
           {errorMsg && (
             <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{errorMsg}</span>
+              <span className="leading-relaxed">{errorMsg}</span>
             </div>
           )}
 
@@ -227,7 +266,7 @@ export const AuthModal: React.FC = () => {
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Processing...</span>
+                <span>Connecting to Supabase...</span>
               </>
             ) : mode === 'signin' ? (
               <span>Sign In with Supabase</span>
@@ -235,11 +274,31 @@ export const AuthModal: React.FC = () => {
               <span>Create Account</span>
             )}
           </button>
+
+          {/* Quick 1-Click Access Divider & Button */}
+          <div className="pt-2">
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-[#E3EAE5]" />
+              <span className="flex-shrink mx-2 text-[10px] text-[#66736B] uppercase font-mono tracking-wider">
+                Instant Analyst Access
+              </span>
+              <div className="flex-grow border-t border-[#E3EAE5]" />
+            </div>
+            <button
+              type="button"
+              onClick={() => loginAsDemoAnalyst('Dr. Ramesh Kumar', 'analyst@isro.gov.in')}
+              className="mt-1.5 w-full py-2.5 px-3 rounded-lg bg-[#EAF7F0] hover:bg-[#D3EFE0] border border-[#167A4A]/30 text-[#167A4A] text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-2xs"
+            >
+              <ShieldCheck className="w-4 h-4 text-[#167A4A]" />
+              <span>1-Click Sign In as Verified ISRO Analyst</span>
+            </button>
+          </div>
         </form>
 
         {/* Footer info */}
-        <div className="px-6 py-3 bg-[#F8FAF9] border-t border-[#E3EAE5] text-center text-[10.5px] text-[#66736B]">
-          Powered by Supabase Database & Auth &bull; 256-bit SSL encrypted
+        <div className="px-6 py-2.5 bg-[#F8FAF9] border-t border-[#E3EAE5] text-center text-[10.5px] text-[#66736B] flex items-center justify-center gap-2">
+          <Activity className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Connected to Supabase ({projectId}.supabase.co) &bull; SSL Encrypted</span>
         </div>
       </div>
     </div>

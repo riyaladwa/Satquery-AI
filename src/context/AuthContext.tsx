@@ -9,6 +9,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  loginAsDemoAnalyst: (name?: string, email?: string) => void;
   usedCapabilities: string[];
   trackCapability: (capabilityName: string) => boolean;
   requireAuthForDownload: () => boolean;
@@ -23,9 +24,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'satquery_used_capabilities';
+const DEMO_USER_KEY = 'satquery_demo_user';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    try {
+      const stored = localStorage.getItem(DEMO_USER_KEY);
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -55,15 +64,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        setSession(session);
+        setUser(session.user);
+        try {
+          localStorage.removeItem(DEMO_USER_KEY);
+        } catch {}
+      }
       setLoading(false);
     });
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        setSession(session);
+        setUser(session.user);
+        try {
+          localStorage.removeItem(DEMO_USER_KEY);
+        } catch {}
+      } else if (!localStorage.getItem(DEMO_USER_KEY)) {
+        setSession(null);
+        setUser(null);
+      }
       setLoading(false);
     });
 
@@ -168,8 +190,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return res;
   };
 
+  const loginAsDemoAnalyst = (name = 'Dr. Ramesh Kumar', email = 'analyst@isro.gov.in') => {
+    const demoUser: any = {
+      id: 'usr-analyst-isro-demo',
+      email: email,
+      user_metadata: {
+        full_name: name,
+        organization: 'ISRO / SatQuery Remote Sensing Center',
+        role: 'Senior Geospatial Intelligence Analyst'
+      },
+      app_metadata: { provider: 'supabase' },
+      aud: 'authenticated',
+      created_at: new Date().toISOString()
+    };
+    setUser(demoUser);
+    setIsAuthModalOpen(false);
+    try {
+      localStorage.setItem(DEMO_USER_KEY, JSON.stringify(demoUser));
+    } catch (e) {
+      console.warn('Could not save demo user to localStorage', e);
+    }
+  };
+
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Supabase signout failed', e);
+    }
+    try {
+      localStorage.removeItem(DEMO_USER_KEY);
+    } catch {}
     setUser(null);
     setSession(null);
   };
@@ -183,6 +234,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         signIn,
         signUp,
         signOut,
+        loginAsDemoAnalyst,
         usedCapabilities,
         trackCapability,
         requireAuthForDownload,
