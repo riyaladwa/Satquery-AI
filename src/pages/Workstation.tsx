@@ -158,15 +158,21 @@ export const Workstation: React.FC = () => {
   // Switch between Sentinel-2, Sentinel-1, and Multimodal
   const handleSensorSwitch = (sensor: 'Sentinel-2' | 'Sentinel-1' | 'Multimodal') => {
     setSelectedSensor(sensor);
+    const isMum = selectedImage?.id?.includes('mum') || selectedImage?.filename?.toLowerCase().includes('mumbai');
+
     if (sensor === 'Sentinel-2') {
-      const s2 = images.find(i => i.id === 'img-dublin-s2-2026') || images.find(i => i.modality === 'Optical');
+      const s2 = isMum
+        ? (images.find(i => i.id === 'img-mum-opt') || images.find(i => i.modality === 'Optical'))
+        : (images.find(i => i.id === 'img-dublin-s2-2026') || images.find(i => i.modality === 'Optical'));
       if (s2) {
         setSelectedImage(s2);
         setCloudCover(s2.metadata?.cloud_cover ?? 0);
         setActiveBandCombination('natural_color');
       }
     } else if (sensor === 'Sentinel-1') {
-      const s1 = images.find(i => i.id === 'img-dublin-s1-2026') || images.find(i => i.modality === 'SAR');
+      const s1 = isMum
+        ? (images.find(i => i.id === 'img-mum-sar') || images.find(i => i.modality === 'SAR'))
+        : (images.find(i => i.id === 'img-dublin-s1-2026') || images.find(i => i.modality === 'SAR'));
       if (s1) {
         setSelectedImage(s1);
         setCloudCover(0);
@@ -174,8 +180,12 @@ export const Workstation: React.FC = () => {
       }
     } else {
       // Multimodal Fusion (Simultaneous S-1 + S-2)
-      const s2 = images.find(i => i.id === 'img-dublin-s2-2026') || images.find(i => i.modality === 'Optical');
-      const s1 = images.find(i => i.id === 'img-dublin-s1-2026') || images.find(i => i.modality === 'SAR');
+      const s2 = isMum
+        ? (images.find(i => i.id === 'img-mum-opt') || images.find(i => i.modality === 'Optical'))
+        : (images.find(i => i.id === 'img-dublin-s2-2026') || images.find(i => i.modality === 'Optical'));
+      const s1 = isMum
+        ? (images.find(i => i.id === 'img-mum-sar') || images.find(i => i.modality === 'SAR'))
+        : (images.find(i => i.id === 'img-dublin-s1-2026') || images.find(i => i.modality === 'SAR'));
       if (s2) setSelectedImage(s2);
       if (s1) setSecondaryImage(s1);
       setCloudCover(0);
@@ -307,6 +317,15 @@ export const Workstation: React.FC = () => {
         setSelectedImage(blr);
         setTileId('43PGN');
         if (blr2023) setSecondaryImage(blr2023);
+      }
+    } else if (query.includes('18.9') || query.toLowerCase().includes('mumbai')) {
+      const mumOpt = images.find(i => i.id === 'img-mum-opt');
+      const mumSar = images.find(i => i.id === 'img-mum-sar');
+      if (mumOpt) {
+        setSelectedImage(mumOpt);
+        setTileId('43KDA');
+        setSelectedDate('10 Sep 2026');
+        if (mumSar) setSecondaryImage(mumSar);
       }
     }
   };

@@ -237,15 +237,26 @@ export const MinimalDashboard: React.FC = () => {
 
     if (targetMode === 'cross_modal') {
       if (isDublin) {
-        return allImages.find((img) => img.id === 'img-dublin-s1-2026') ||
-               allImages.find((img) => img.modality === 'SAR') || null;
+        // If primary is SAR, pair with Dublin optical; if optical, pair with Dublin SAR
+        if (primary.modality === 'SAR' || primary.id.includes('s1')) {
+          return allImages.find((img) => img.id === 'img-dublin-s2-2026') || null;
+        }
+        return allImages.find((img) => img.id === 'img-dublin-s1-2026') || null;
       }
       if (isMum) {
-        return allImages.find((img) => img.id === 'img-mum-sar') ||
-               allImages.find((img) => img.modality === 'SAR') || null;
+        // If primary is SAR, pair with Mumbai optical; if optical, pair with Mumbai SAR
+        if (primary.modality === 'SAR' || primary.id.includes('sar')) {
+          return allImages.find((img) => img.id === 'img-mum-opt') || null;
+        }
+        return allImages.find((img) => img.id === 'img-mum-sar') || null;
       }
-      return allImages.find((img) => img.modality === 'SAR' && img.id !== primary.id) ||
-             allImages.find((img) => img.modality === 'SAR') || null;
+      // If primary is a SAR image without explicit tag, find any optical in same area
+      if (primary.modality === 'SAR') {
+        return allImages.find((img) => img.modality === 'Optical' && (img.id.includes('mum') || img.id.includes('dublin'))) || null;
+      }
+      // Fallback to Mumbai SAR if primary is Mumbai, else Dublin SAR
+      return allImages.find((img) => img.id === 'img-mum-sar') ||
+             allImages.find((img) => img.id === 'img-dublin-s1-2026') || null;
     }
 
     return null;
@@ -257,18 +268,44 @@ export const MinimalDashboard: React.FC = () => {
       if (!trackCapability(`mode_${newMode}`)) return;
     }
     setMode(newMode);
+    setErrorMsg(null);
+
     if (newMode === 'single') {
       setSecondaryImage(null);
-    } else if (primaryImage) {
-      const match = findMatchingSecondaryImage(primaryImage, newMode, images);
-      setSecondaryImage(match);
-      if (!query || query.includes('Analyze') || query.includes('Perform')) {
-        if (newMode === 'change') {
-          setQuery('Analyze built-up change between 2023 and 2026');
-        } else if (newMode === 'cross_modal') {
-          setQuery('Perform Optical + SAR joint analysis to verify water and built structures');
+    } else if (newMode === 'cross_modal') {
+      let primary = primaryImage;
+      const hasDirectSar = primary && (
+        primary.id.includes('mum') ||
+        primary.id.includes('dublin') ||
+        primary.filename.toLowerCase().includes('mumbai') ||
+        primary.filename.toLowerCase().includes('dublin')
+      );
+
+      // If current primary has no SAR companion (e.g. Bengaluru, Kerala, Punjab), switch to Mumbai Optical!
+      if (!hasDirectSar) {
+        const mumOpt = images.find((i) => i.id === 'img-mum-opt') || images.find((i) => i.id === 'img-dublin-s2-2026') || images[0];
+        if (mumOpt) {
+          primary = mumOpt;
+          setPrimaryImage(mumOpt);
         }
       }
+
+      const match = findMatchingSecondaryImage(primary, 'cross_modal', images);
+      setSecondaryImage(match);
+      setQuery('Perform Optical + SAR joint analysis to verify water and built structures');
+    } else if (newMode === 'change') {
+      let primary = primaryImage;
+      const isMum = primary && (primary.id.includes('mum') || primary.filename.toLowerCase().includes('mumbai'));
+      if (isMum) {
+        const dublin2026 = images.find((i) => i.id === 'img-dublin-s2-2026') || images[0];
+        if (dublin2026) {
+          primary = dublin2026;
+          setPrimaryImage(dublin2026);
+        }
+      }
+      const match = findMatchingSecondaryImage(primary, 'change', images);
+      setSecondaryImage(match);
+      setQuery('Analyze built-up change between 2023 and 2026');
     }
   };
 
@@ -537,12 +574,45 @@ export const MinimalDashboard: React.FC = () => {
                     }}
                     className="w-full px-3 py-1.5 bg-white border border-[#E3EAE5] rounded-lg text-xs font-medium text-[#17201B] focus:outline-hidden focus:border-[#167A4A] shadow-2xs"
                   >
-                    {images.map((img) => (
-                      <option key={img.id} value={img.id}>
-                        {img.sensor} • {img.modality} ({img.acquisition_date || 'Scene'}) — {img.filename}
-                      </option>
-                    ))}
+                    {images
+                      .filter((img) => {
+                        if (mode === 'cross_modal') {
+                          const isPrimarySar = primaryImage?.modality === 'SAR' || primaryImage?.id?.includes('sar');
+                          return isPrimarySar ? img.modality === 'Optical' : (img.modality === 'SAR' || img.id.includes('sar') || img.id.includes('s1'));
+                        }
+                        if (mode === 'change') {
+                          return img.id !== primaryImage?.id;
+                        }
+                        return true;
+                      })
+                      .map((img) => (
+                        <option key={img.id} value={img.id}>
+                          {img.sensor} • {img.modality} ({img.acquisition_date || 'Scene'}) — {img.filename}
+                        </option>
+                      ))}
                   </select>
+                </div>
+              )}
+
+              {/* Helpful co-location guidance banner for Optical + SAR */}
+              {mode === 'cross_modal' && primaryImage && !primaryImage.id.includes('mum') && !primaryImage.id.includes('dublin') && (
+                <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-center justify-between gap-2">
+                  <span>Current scene has no paired SAR radar imagery.</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const mumOpt = images.find((i) => i.id === 'img-mum-opt');
+                      const mumSar = images.find((i) => i.id === 'img-mum-sar');
+                      if (mumOpt && mumSar) {
+                        setPrimaryImage(mumOpt);
+                        setSecondaryImage(mumSar);
+                        setErrorMsg(null);
+                      }
+                    }}
+                    className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded font-bold cursor-pointer shrink-0 shadow-2xs"
+                  >
+                    Use Mumbai Optical + SAR
+                  </button>
                 </div>
               )}
             </div>
@@ -626,12 +696,49 @@ export const MinimalDashboard: React.FC = () => {
           {/* Section C: Dynamic Content Area (Loading, Results, or Guidance) */}
           <div className="p-4 flex-1 space-y-4">
             {errorMsg && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold">Error: </span>
-                  {errorMsg}
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 space-y-2">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Error: </span>
+                    {errorMsg}
+                  </div>
                 </div>
+                {errorMsg.toLowerCase().includes('geographic coverage') && (
+                  <div className="flex items-center gap-2 pt-1 border-t border-rose-200/60">
+                    <span className="text-[11px] text-rose-700">Auto-fix pair:</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const mumOpt = images.find((i) => i.id === 'img-mum-opt');
+                        const mumSar = images.find((i) => i.id === 'img-mum-sar');
+                        if (mumOpt && mumSar) {
+                          setPrimaryImage(mumOpt);
+                          setSecondaryImage(mumSar);
+                          setErrorMsg(null);
+                        }
+                      }}
+                      className="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-[10.5px] font-bold cursor-pointer"
+                    >
+                      Use Mumbai Optical + SAR
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const dOpt = images.find((i) => i.id === 'img-dublin-s2-2026');
+                        const dSar = images.find((i) => i.id === 'img-dublin-s1-2026');
+                        if (dOpt && dSar) {
+                          setPrimaryImage(dOpt);
+                          setSecondaryImage(dSar);
+                          setErrorMsg(null);
+                        }
+                      }}
+                      className="px-2 py-0.5 bg-white border border-rose-300 text-rose-800 hover:bg-rose-100 rounded text-[10.5px] font-bold cursor-pointer"
+                    >
+                      Use Dublin Optical + SAR
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

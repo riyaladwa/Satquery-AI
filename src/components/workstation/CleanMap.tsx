@@ -258,7 +258,7 @@ export const CleanMap: React.FC<CleanMapProps> = ({
 
       if (primaryImage.preview_url && activeViewMode !== 'secondary') {
         const overlay = L.imageOverlay(resolveAssetUrl(primaryImage.preview_url), bounds, {
-          opacity: 0.88,
+          opacity: activeViewMode === 'split' ? 0.75 : 0.88,
           interactive: false
         }).addTo(map);
         primaryOverlayRef.current = overlay;
@@ -281,13 +281,13 @@ export const CleanMap: React.FC<CleanMapProps> = ({
       secondaryOverlayRef.current = null;
     }
 
-    if (secondaryImage && secondaryImage.preview_url && activeViewMode === 'secondary') {
+    if (secondaryImage && secondaryImage.preview_url && (activeViewMode === 'secondary' || activeViewMode === 'split')) {
       const boundsArr = secondaryImage.metadata?.bounds || primaryImage?.metadata?.bounds;
       if (boundsArr) {
         const [minLat, minLon, maxLat, maxLon] = boundsArr;
         const bounds: L.LatLngBoundsExpression = [[minLat, minLon], [maxLat, maxLon]];
         const overlay = L.imageOverlay(resolveAssetUrl(secondaryImage.preview_url), bounds, {
-          opacity: 0.88,
+          opacity: activeViewMode === 'split' ? 0.55 : 0.88,
           interactive: false
         }).addTo(map);
         secondaryOverlayRef.current = overlay;
@@ -474,45 +474,67 @@ export const CleanMap: React.FC<CleanMapProps> = ({
         </button>
 
         {/* Secondary Comparison Toggle if secondary image is present */}
-        {secondaryImage && (
-          <div className="bg-white/95 backdrop-blur-xs border border-[#E3EAE5] rounded-lg shadow-xs p-1 flex items-center gap-1">
-            <button
-              onClick={() => setActiveViewMode('primary')}
-              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                activeViewMode === 'primary'
-                  ? 'bg-[#167A4A] text-white shadow-2xs'
-                  : 'text-[#66736B] hover:bg-[#FBFDFB]'
-              }`}
-              type="button"
-            >
-              T1 ({primaryImage?.acquisition_date || 'Primary'})
-            </button>
-            <button
-              onClick={() => setActiveViewMode('secondary')}
-              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                activeViewMode === 'secondary'
-                  ? 'bg-[#167A4A] text-white shadow-2xs'
-                  : 'text-[#66736B] hover:bg-[#FBFDFB]'
-              }`}
-              type="button"
-            >
-              T2 ({secondaryImage.acquisition_date || 'Secondary'})
-            </button>
-            <span className="text-[#E3EAE5]">|</span>
-            <button
-              onClick={handleToggleBlink}
-              className={`px-2 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
-                isBlinking
-                  ? 'bg-amber-500 text-white font-bold animate-pulse'
-                  : 'text-[#66736B] hover:text-[#17201B] hover:bg-[#FBFDFB]'
-              }`}
-              type="button"
-              title="Rapidly alternate between T1 and T2 scenes to spot changes visually"
-            >
-              <span>{isBlinking ? 'Stop' : 'Blink'}</span>
-            </button>
-          </div>
-        )}
+        {secondaryImage && (() => {
+          const isOpticalSar = Boolean(
+            (primaryImage?.modality === 'Optical' && secondaryImage?.modality === 'SAR') ||
+            (primaryImage?.modality === 'SAR' && secondaryImage?.modality === 'Optical') ||
+            primaryImage?.id?.includes('sar') ||
+            secondaryImage?.id?.includes('sar') ||
+            primaryImage?.sensor?.includes('Sentinel-1') ||
+            secondaryImage?.sensor?.includes('Sentinel-1')
+          );
+          return (
+            <div className="bg-white/95 backdrop-blur-xs border border-[#E3EAE5] rounded-lg shadow-xs p-1 flex items-center gap-1">
+              <button
+                onClick={() => setActiveViewMode('primary')}
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                  activeViewMode === 'primary'
+                    ? 'bg-[#167A4A] text-white shadow-2xs'
+                    : 'text-[#66736B] hover:bg-[#FBFDFB]'
+                }`}
+                type="button"
+              >
+                {isOpticalSar ? 'Optical (S2)' : `T1 (${primaryImage?.acquisition_date || 'Primary'})`}
+              </button>
+              <button
+                onClick={() => setActiveViewMode('secondary')}
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                  activeViewMode === 'secondary'
+                    ? 'bg-[#167A4A] text-white shadow-2xs'
+                    : 'text-[#66736B] hover:bg-[#FBFDFB]'
+                }`}
+                type="button"
+              >
+                {isOpticalSar ? 'SAR Radar (S1)' : `T2 (${secondaryImage.acquisition_date || 'Secondary'})`}
+              </button>
+              <button
+                onClick={() => setActiveViewMode('split')}
+                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                  activeViewMode === 'split'
+                    ? 'bg-[#167A4A] text-white shadow-2xs'
+                    : 'text-[#66736B] hover:bg-[#FBFDFB]'
+                }`}
+                type="button"
+                title="Overlay Optical and SAR Radar together with alpha blend"
+              >
+                Blend
+              </button>
+              <span className="text-[#E3EAE5]">|</span>
+              <button
+                onClick={handleToggleBlink}
+                className={`px-2 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                  isBlinking
+                    ? 'bg-amber-500 text-white font-bold animate-pulse'
+                    : 'text-[#66736B] hover:text-[#17201B] hover:bg-[#FBFDFB]'
+                }`}
+                type="button"
+                title="Rapidly alternate between scenes to spot differences visually"
+              >
+                <span>{isBlinking ? 'Stop' : 'Blink'}</span>
+              </button>
+            </div>
+          );
+        })()}
 
         <button
           onClick={handleResetBounds}

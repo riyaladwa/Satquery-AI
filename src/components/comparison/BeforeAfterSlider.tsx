@@ -85,23 +85,26 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
       </div>
 
       {/* 3. AI Change Heatmap Overlay (when toggled ON) */}
-      {showHeatmap && (
-        <div
-          className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-10 mix-blend-screen"
-          style={{
-            background: 'radial-gradient(ellipse at 65% 45%, rgba(225,29,72,0.65) 0%, rgba(245,158,11,0.4) 40%, rgba(56,217,209,0.15) 70%, transparent 85%)'
-          }}
-        >
-          {/* Animated hotspot markers */}
-          <div className="absolute top-[42%] left-[62%] w-16 h-16 rounded-full border-2 border-red-500/80 bg-red-500/30 animate-ping pointer-events-none" />
-          <div className="absolute top-[32%] left-[55%] px-2 py-0.5 rounded bg-red-600/90 text-white font-mono text-[10px] font-bold shadow-lg">
-            +34% Built-up Delta
+      {showHeatmap && (() => {
+        const isSarComparison = (labelA + labelB).toLowerCase().includes('sar') || (labelA + labelB).toLowerCase().includes('radar');
+        return (
+          <div
+            className="absolute inset-0 pointer-events-none transition-opacity duration-300 z-10 mix-blend-screen"
+            style={{
+              background: 'radial-gradient(ellipse at 65% 45%, rgba(225,29,72,0.65) 0%, rgba(245,158,11,0.4) 40%, rgba(56,217,209,0.15) 70%, transparent 85%)'
+            }}
+          >
+            {/* Animated hotspot markers */}
+            <div className="absolute top-[42%] left-[62%] w-16 h-16 rounded-full border-2 border-red-500/80 bg-red-500/30 animate-ping pointer-events-none" />
+            <div className="absolute top-[32%] left-[55%] px-2 py-0.5 rounded bg-red-600/90 text-white font-mono text-[10px] font-bold shadow-lg">
+              {isSarComparison ? 'SAR Water Penetration (VV: -23.5 dB)' : '+34% Built-up Delta'}
+            </div>
+            <div className="absolute top-[65%] left-[70%] px-2 py-0.5 rounded bg-amber-500/90 text-white font-mono text-[10px] font-bold shadow-lg">
+              {isSarComparison ? 'Double-Bounce Scatter (VH/VV Concordance)' : '+18% Road Infill'}
+            </div>
           </div>
-          <div className="absolute top-[65%] left-[70%] px-2 py-0.5 rounded bg-amber-500/90 text-white font-mono text-[10px] font-bold shadow-lg">
-            +18% Road Infill
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 4. Draggable Divider Line & Handle */}
       {!isBlinking && (
