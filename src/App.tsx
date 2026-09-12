@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext';
+import { AuthProvider } from './context/AuthContext';
+import { AuthModal } from './components/auth/AuthModal';
 import { MinimalLanding } from './pages/MinimalLanding';
 import { MinimalDashboard } from './pages/MinimalDashboard';
 import { MyWork } from './pages/MyWork';
@@ -10,8 +12,10 @@ import { Compare } from './pages/Compare';
 export const App: React.FC = () => {
   return (
     <LanguageProvider>
-      <Router>
-        <Routes>
+      <AuthProvider>
+        <Router>
+          <AuthModal />
+          <Routes>
           {/* 1. Landing Page: Minimal, Modern, Professional Overview */}
           <Route path="/" element={<MinimalLanding />} />
 
@@ -33,7 +37,8 @@ export const App: React.FC = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
-    </LanguageProvider>
+    </AuthProvider>
+  </LanguageProvider>
   );
 };
 

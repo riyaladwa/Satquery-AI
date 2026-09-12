@@ -24,9 +24,11 @@ import { DisasterModeDrawer } from '../components/workstation/drawers/DisasterMo
 import { AgriModeDrawer } from '../components/workstation/drawers/AgriModeDrawer';
 import { UrbanModeDrawer } from '../components/workstation/drawers/UrbanModeDrawer';
 import { ReportModal } from '../components/workstation/ReportModal';
+import { useAuth } from '../context/AuthContext';
 
 export const Workstation: React.FC = () => {
   const [searchParams] = useSearchParams();
+  const { trackCapability } = useAuth();
 
   // Core state
   const [images, setImages] = useState<ImageRecord[]>([]);
@@ -196,6 +198,7 @@ export const Workstation: React.FC = () => {
   // Map click handler -> pixel inspection
   const handleMapClick = useCallback(async (lat: number, lon: number) => {
     if (!selectedImage) return;
+    if (!trackCapability('pixel_inspector')) return;
 
     // Open Pixel Inspector drawer
     setActiveDrawer('pixel');
@@ -209,7 +212,7 @@ export const Workstation: React.FC = () => {
     } finally {
       setPixelLoading(false);
     }
-  }, [selectedImage]);
+  }, [selectedImage, trackCapability]);
 
   // Sample Dublin center demo point
   const handleSampleDemoPoint = () => {
@@ -237,6 +240,7 @@ export const Workstation: React.FC = () => {
   // AI Copilot query submit
   const handleSendQuery = async (query: string) => {
     if (!selectedImage) return;
+    if (!trackCapability('ai_query')) return;
 
     const qLower = query.toLowerCase();
     const isPairQuery = qLower.includes('change') || 
@@ -355,8 +359,11 @@ export const Workstation: React.FC = () => {
           onToggleDrawer={(drawer) => {
             if (drawer === 'reports') {
               setIsReportModalOpen(true);
-            } else {
+            } else if (drawer) {
+              if (!trackCapability(`drawer_${drawer}`)) return;
               setActiveDrawer(drawer);
+            } else {
+              setActiveDrawer(null);
             }
           }}
         />

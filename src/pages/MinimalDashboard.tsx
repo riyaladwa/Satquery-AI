@@ -4,6 +4,7 @@ import { CleanMap } from '../components/workstation/CleanMap';
 import { MinimalResultCard } from '../components/workstation/MinimalResultCard';
 import { UploadModal } from '../components/workstation/UploadModal';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { ImageRecord, AnalyzeResponse, EvidenceRegion } from '../types';
 import {
@@ -33,6 +34,7 @@ export interface ConversationItem {
 
 export const MinimalDashboard: React.FC = () => {
   const { language, setLanguage, currentLanguageOption } = useLanguage();
+  const { trackCapability } = useAuth();
 
   const [images, setImages] = useState<ImageRecord[]>([]);
   const [primaryImage, setPrimaryImage] = useState<ImageRecord | null>(null);
@@ -214,6 +216,9 @@ export const MinimalDashboard: React.FC = () => {
 
   // Update secondary image when mode changes
   const handleModeChange = (newMode: AnalysisMode) => {
+    if (newMode !== 'single') {
+      if (!trackCapability(`mode_${newMode}`)) return;
+    }
     setMode(newMode);
     if (newMode === 'single') {
       setSecondaryImage(null);
@@ -232,6 +237,8 @@ export const MinimalDashboard: React.FC = () => {
   const handleRunQuery = async (customQuery?: string) => {
     const q = (customQuery || query).trim();
     if (!q || !primaryImage) return;
+
+    if (!trackCapability('ai_query')) return;
 
     try {
       setLoading(true);
@@ -446,7 +453,10 @@ export const MinimalDashboard: React.FC = () => {
                   </label>
                   <button
                     type="button"
-                    onClick={() => setIsUploadModalOpen(true)}
+                    onClick={() => {
+                      if (!trackCapability('upload_raster')) return;
+                      setIsUploadModalOpen(true);
+                    }}
                     className="inline-flex items-center gap-1 text-[11px] font-bold text-[#167A4A] hover:underline cursor-pointer"
                   >
                     <UploadCloud className="w-3.5 h-3.5" />

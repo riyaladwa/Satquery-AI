@@ -19,9 +19,11 @@ import {
 } from 'lucide-react';
 import { MinimalHeader } from '../components/navigation/MinimalHeader';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export const Reports: React.FC = () => {
   const navigate = useNavigate();
+  const { requireAuthForDownload } = useAuth();
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,6 +66,7 @@ export const Reports: React.FC = () => {
   }, []);
 
   const handleDownload = async (reportId: string) => {
+    if (!requireAuthForDownload()) return;
     try {
       setDownloadingId(reportId);
       const cleanFilename = `${reportId}.pdf`;
@@ -98,6 +101,7 @@ export const Reports: React.FC = () => {
 
   const handleCreateNewReport = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requireAuthForDownload()) return;
     try {
       setIsGenerating(true);
       const chosenImg = availableImages.find((img) => img.id === selectedImageId) || availableImages[0];

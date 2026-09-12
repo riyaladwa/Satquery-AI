@@ -9,6 +9,7 @@ from app.database.session import get_db
 from app.database.models import Image, Report, AnalysisResult
 from app.schemas.api_schemas import ReportCreateRequest, ReportResponse
 from app.reports.pdf_builder import generate_pdf_report
+from app.storage.supabase_storage import upload_bytes_to_supabase, download_bytes_from_supabase, is_supabase_storage_enabled
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 
@@ -101,11 +102,21 @@ def create_report(req: ReportCreateRequest, db: Session = Depends(get_db)):
     with open(file_path, "wb") as f:
         f.write(pdf_bytes)
 
+    stored_file_path = str(file_path)
+    if is_supabase_storage_enabled():
+        supa_url = upload_bytes_to_supabase(
+            path=f"reports/{pdf_filename}",
+            data=pdf_bytes,
+            content_type="application/pdf"
+        )
+        if supa_url:
+            stored_file_path = supa_url
+
     report_rec = Report(
         id=report_id,
         project_id=project_id,
         title=title,
-        file_path=str(file_path),
+        file_path=stored_file_path,
         file_size=len(pdf_bytes),
         summary_text=req.answer_en[:300]
     )
@@ -138,15 +149,30 @@ def get_report(report_id: str, db: Session = Depends(get_db)):
 
 @router.get("/{report_id}/download")
 def download_report(report_id: str, db: Session = Depends(get_db)):
+    from fastapi.responses import Response
     rep = db.query(Report).filter(Report.id == report_id).first()
-    if not rep or not os.path.exists(rep.file_path):
-        raise HTTPException(status_code=404, detail="Report file not found")
+    if not rep:
+        raise HTTPException(status_code=404, detail="Report not found")
 
-    return FileResponse(
-        path=rep.file_path,
-        media_type="application/pdf",
-        filename=f"{rep.id}.pdf"
-    )
+    # 1. If local file exists, serve directly
+    if rep.file_path and os.path.exists(rep.file_path):
+        return FileResponse(
+            path=rep.file_path,
+            media_type="application/pdf",
+            filename=f"{rep.id}.pdf"
+        )
+
+    # 2. Check Supabase Storage if local file was removed/serverless cold start
+    if is_supabase_storage_enabled():
+        supa_bytes = download_bytes_from_supabase(f"reports/{rep.id}.pdf")
+        if supa_bytes:
+            return Response(
+                content=supa_bytes,
+                media_type="application/pdf",
+                headers={"Content-Disposition": f'attachment; filename="{rep.id}.pdf"'}
+            )
+
+    raise HTTPException(status_code=404, detail="Report PDF file not available.")
 
 @router.delete("/{report_id}")
 def delete_report(report_id: str, db: Session = Depends(get_db)):

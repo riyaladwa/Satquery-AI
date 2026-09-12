@@ -228,6 +228,53 @@ npm run dev
 
 ---
 
+## ⚡ Supabase Database, Storage & Auth Integration
+
+SatQuery AI is integrated with **[Supabase](https://supabase.com)** to provide enterprise-grade persistence, cloud raster object storage, and secure user authentication:
+
+1. **Relational PostgreSQL Database**:
+   - 11 relational tables (`users`, `user_settings`, `projects`, `images`, `image_metadata`, `analysis_sessions`, `queries`, `analysis_results`, `evidence_regions`, `reports`, `model_runs`).
+   - Row-Level Security (RLS) policies on all tables.
+   - Automatic user synchronization trigger (`on_auth_user_created`) that links Supabase Auth accounts to `public.users` and initializes `public.user_settings`.
+
+2. **Cloud Storage Bucket (`satellite-images`)**:
+   - Used for raw satellite rasters (GeoTIFF/TIFF) and generated RGB previews.
+   - Used for permanent storage and delivery of compiled PDF intelligence reports.
+   - Public read access for client map rendering and secure upload policies for backend and authenticated users.
+
+3. **Guest Capability Policy (2 Free Capabilities & Report Download Protection)**:
+   - Unauthenticated guest visitors can explore the platform and use up to **2 free capabilities** (e.g. asking an AI query, inspecting pixel reflectance, measuring geodesic area, opening comparison drawers).
+   - If a guest attempts a **3rd capability** or attempts to **download any generated intelligence report**, the platform prompts them to sign in or create an account via the integrated Supabase Auth modal.
+   - Once authenticated, users receive unlimited access to all GIS workstation capabilities and PDF report downloads.
+
+### Quick Supabase Setup Steps
+
+1. **Run Database Migration Script**:
+   - Open your Supabase project dashboard and navigate to the **SQL Editor**.
+   - Copy the contents of [`supabase_schema.sql`](supabase_schema.sql) and click **Run**.
+   - This creates all 11 tables, indexes, RLS policies, the `satellite-images` storage bucket, and the user sync trigger.
+
+2. **Configure Environment Variables (`.env`)**:
+   ```bash
+   # Frontend Supabase keys (public/anon)
+   VITE_SUPABASE_URL=https://your-project.supabase.co
+   VITE_SUPABASE_ANON_KEY=your-anon-or-publishable-key
+
+   # Backend Supabase keys (secure server-side)
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_ANON_KEY=your-anon-or-publishable-key
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-secret-key
+   SUPABASE_STORAGE_BUCKET=satellite-images
+
+   # Supabase Database URI (PostgreSQL connection string from Project Settings -> Database)
+   DATABASE_URL=postgresql://postgres.xxx:password@aws-0-region.pooler.supabase.com:6543/postgres
+   ```
+
+3. **Graceful Fallback**:
+   - If Supabase environment variables are omitted, SatQuery AI automatically falls back to local SQLite (`data/satquery.db`) and local file storage, ensuring seamless offline development.
+
+---
+
 ## 🚀 Vercel Full-Stack Deployment
 
 SatQuery AI is preconfigured for **unified full-stack deployment** on [Vercel](https://vercel.com). Both the React 19 + Vite frontend and the FastAPI Python backend run together under a single domain.

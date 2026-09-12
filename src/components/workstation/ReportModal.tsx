@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FileText, Download, X, Check, ShieldCheck, Printer, Radio, ExternalLink } from 'lucide-react';
 import { api } from '../../services/api';
 import { AnalyzeResponse, ImageRecord } from '../../types';
+import { useAuth } from '../../context/AuthContext';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -16,12 +17,14 @@ export const ReportModal: React.FC<ReportModalProps> = ({
   response,
   image
 }) => {
+  const { requireAuthForDownload } = useAuth();
   const [generating, setGenerating] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
   if (!isOpen || !response) return null;
 
   const handleGeneratePdf = async () => {
+    if (!requireAuthForDownload()) return;
     setGenerating(true);
     try {
       const rep = await api.generateReport({
@@ -158,6 +161,11 @@ export const ReportModal: React.FC<ReportModalProps> = ({
               <a
                 href={downloadUrl}
                 download
+                onClick={(e) => {
+                  if (!requireAuthForDownload()) {
+                    e.preventDefault();
+                  }
+                }}
                 className="px-4 py-1.5 rounded-lg bg-gis-success hover:bg-gis-success/90 text-gis-bg font-bold text-xs flex items-center gap-1.5 transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />

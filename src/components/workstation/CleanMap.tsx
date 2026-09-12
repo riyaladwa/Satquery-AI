@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { ImageRecord, EvidenceRegion, AreaCalculationResult } from '../../types';
 import { api, resolveAssetUrl } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { Maximize2, Crosshair, Ruler, Trash2, Loader2, Check } from 'lucide-react';
 
 interface CleanMapProps {
@@ -21,6 +22,7 @@ export const CleanMap: React.FC<CleanMapProps> = ({
   onSelectEvidence,
   className = ''
 }) => {
+  const { trackCapability } = useAuth();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const baseTileRef = useRef<L.TileLayer | null>(null);
@@ -398,10 +400,13 @@ export const CleanMap: React.FC<CleanMapProps> = ({
         {/* Pixel Inspector Toggle */}
         <button
           onClick={() => {
-            setIsInspecting((prev) => !prev);
             if (!isInspecting) {
+              if (!trackCapability('pixel_inspector')) return;
+              setIsInspecting(true);
               setIsMeasuring(false);
               handleClearMeasurement();
+            } else {
+              setIsInspecting(false);
             }
           }}
           className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer ${
@@ -423,10 +428,12 @@ export const CleanMap: React.FC<CleanMapProps> = ({
         {/* Measure Area Tool Toggle */}
         <button
           onClick={() => {
-            setIsMeasuring((prev) => !prev);
             if (!isMeasuring) {
+              if (!trackCapability('measure_area')) return;
+              setIsMeasuring(true);
               setIsInspecting(false);
             } else {
+              setIsMeasuring(false);
               handleClearMeasurement();
             }
           }}

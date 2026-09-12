@@ -189,5 +189,25 @@ export const api = {
   async deleteSession(id: string) {
     const res = await axios.delete(`${API_BASE}/history/sessions/${id}`);
     return res.data;
+  },
+
+  async getUserSettings(userId?: string) {
+    const res = await axios.get(`${API_BASE}/settings`, {
+      params: userId ? { user_id: userId } : {}
+    });
+    return res.data;
+  },
+
+  async updateUserSettings(settings: {
+    user_id?: string;
+    preferred_language?: string;
+    default_basemap?: string;
+    confidence_threshold?: number;
+    auto_generate_reports?: boolean;
+    notification_preferences?: Record<string, any>;
+  }) {
+    const res = await axios.put(`${API_BASE}/settings`, settings);
+    return res.data;
   }
 };
+

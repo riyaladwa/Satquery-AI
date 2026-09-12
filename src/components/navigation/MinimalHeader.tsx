@@ -1,18 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Globe, Check, Sparkles, FileText, Clock, Compass, GitCompare } from 'lucide-react';
+import { Globe, Check, Sparkles, FileText, Clock, Compass, GitCompare, LogOut, User as UserIcon } from 'lucide-react';
 import { useLanguage, SUPPORTED_LANGUAGES } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const MinimalHeader: React.FC = () => {
   const navigate = useNavigate();
   const { language, setLanguage, currentLanguageOption, t } = useLanguage();
+  const { user, signOut, usedCapabilities, openAuthModal } = useAuth();
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setLangDropdownOpen(false);
+      }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target as Node)) {
+        setUserDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -168,10 +175,59 @@ export const MinimalHeader: React.FC = () => {
           <span>{t('engineOnline')}</span>
         </div>
 
-        {/* User / Organization Avatar */}
-        <div className="w-8 h-8 rounded-full bg-[#EAF7F0] border border-[#167A4A]/30 flex items-center justify-center text-[#167A4A] font-bold text-xs shadow-2xs">
-          ISRO
-        </div>
+        {/* User / Supabase Auth Button */}
+        {user ? (
+          <div className="relative" ref={userDropdownRef}>
+            <button
+              onClick={() => setUserDropdownOpen((prev) => !prev)}
+              className="w-8 h-8 rounded-full bg-[#167A4A] text-white flex items-center justify-center font-bold text-xs shadow-xs cursor-pointer hover:opacity-90 transition-opacity focus:outline-hidden"
+              type="button"
+              title={user.email}
+            >
+              {user.email ? user.email[0].toUpperCase() : 'U'}
+            </button>
+
+            {userDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white border border-[#E3EAE5] rounded-xl shadow-lg py-1.5 z-50 animate-in fade-in duration-150">
+                <div className="px-3.5 py-2 border-b border-[#E3EAE5]/60">
+                  <div className="text-xs font-bold text-[#17201B] truncate">
+                    {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                  </div>
+                  <div className="text-[10px] text-[#66736B] truncate">{user.email}</div>
+                  <div className="mt-1 inline-flex items-center gap-1 text-[10px] text-[#167A4A] bg-[#EAF7F0] px-1.5 py-0.5 rounded font-bold">
+                    <span>Unlimited Access</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await signOut();
+                    setUserDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3.5 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors cursor-pointer text-left font-medium"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-[10.5px] text-[#66736B] font-mono hidden sm:inline bg-[#F4F6F5] px-2 py-1 rounded border border-[#E3EAE5]">
+              {usedCapabilities.length}/2 Free
+            </span>
+            <button
+              type="button"
+              onClick={() => openAuthModal()}
+              className="px-3 py-1.5 rounded-lg bg-[#EAF7F0] hover:bg-[#167A4A] text-[#167A4A] hover:text-white border border-[#167A4A]/30 text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
+            >
+              <UserIcon className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

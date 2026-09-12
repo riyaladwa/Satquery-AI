@@ -21,8 +21,16 @@ class Settings(BaseModel):
     REPORT_DIR: Path = DATA_DIR / "reports"
     PREVIEW_DIR: Path = DATA_DIR / "previews"
     
-    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{DATA_DIR}/satquery.db")
+    # Database configuration with PostgreSQL & Supabase support
+    raw_db_url: str = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_DB_URL") or f"sqlite:///{DATA_DIR}/satquery.db"
+    DATABASE_URL: str = raw_db_url.replace("postgres://", "postgresql://", 1) if raw_db_url.startswith("postgres://") else raw_db_url
     
+    # Supabase Integration Parameters
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", os.getenv("VITE_SUPABASE_URL", ""))
+    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", os.getenv("VITE_SUPABASE_ANON_KEY", os.getenv("SUPABASE_KEY", "")))
+    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    SUPABASE_STORAGE_BUCKET: str = os.getenv("SUPABASE_STORAGE_BUCKET", "satellite-images")
+
     CORS_ORIGINS: list[str] = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",

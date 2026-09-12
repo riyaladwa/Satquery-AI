@@ -8,6 +8,7 @@ from app.database.models import Image, ImageMetadata, Project
 from app.schemas.api_schemas import ImageResponse, ImageMetadataResponse, QualityCheckResponse
 from app.geospatial.raster import read_geotiff_metadata, generate_preview
 from app.geospatial.quality import validate_image_quality
+from app.storage.supabase_storage import upload_bytes_to_supabase, is_supabase_storage_enabled
 
 router = APIRouter(prefix="/images", tags=["images"])
 
@@ -86,6 +87,27 @@ async def upload_image(
     with open(preview_path, "wb") as f:
         f.write(preview_bytes)
 
+    # Upload to Supabase Storage if configured
+    stored_file_path = str(target_path)
+    stored_preview_path = f"/previews/{preview_filename}"
+    
+    if is_supabase_storage_enabled():
+        supa_file = upload_bytes_to_supabase(
+            path=f"uploads/{clean_filename}",
+            data=content,
+            content_type="image/tiff" if ext in [".tif", ".tiff"] else file.content_type or "application/octet-stream"
+        )
+        if supa_file:
+            stored_file_path = supa_file
+
+        supa_preview = upload_bytes_to_supabase(
+            path=f"previews/{preview_filename}",
+            data=preview_bytes,
+            content_type="image/png"
+        )
+        if supa_preview:
+            stored_preview_path = supa_preview
+
     # Database records
     bounds = meta_dict.get("bounds", [12.92, 77.58, 12.98, 77.65])
     img_rec = Image(
@@ -93,8 +115,8 @@ async def upload_image(
         project_id=project_id,
         filename=clean_filename,
         original_filename=file.filename,
-        file_path=str(target_path),
-        preview_path=f"/previews/{preview_filename}",
+        file_path=stored_file_path,
+        preview_path=stored_preview_path,
         file_size=len(content),
         file_format=meta_dict.get("format", "GeoTIFF"),
         modality=modality,
