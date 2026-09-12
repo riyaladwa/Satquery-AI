@@ -2,10 +2,13 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import { ImageRecord, EvidenceRegion } from '../../types';
 import { Crosshair, Compass, Layers, Maximize2, Minimize2, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
-import { api } from '../../services/api';
+import { api, resolveAssetUrl } from '../../services/api';
 
 interface WorkstationMapProps {
   image?: ImageRecord | null;
+  secondaryImage?: ImageRecord | null;
+  compareMode?: 'slider' | 'split' | 'overlay';
+  sliderPosition?: number;
   selectedSensor: 'Sentinel-2' | 'Sentinel-1' | 'Multimodal';
   evidenceRegions?: EvidenceRegion[];
   selectedEvidenceId?: string | null;
@@ -23,6 +26,9 @@ interface WorkstationMapProps {
 
 export const WorkstationMap: React.FC<WorkstationMapProps> = ({
   image,
+  secondaryImage,
+  compareMode = 'overlay',
+  sliderPosition = 50,
   selectedSensor,
   evidenceRegions = [],
   selectedEvidenceId,
@@ -42,6 +48,7 @@ export const WorkstationMap: React.FC<WorkstationMapProps> = ({
   const baseTileRef = useRef<L.TileLayer | null>(null);
   const labelsTileRef = useRef<L.TileLayer | null>(null);
   const imageOverlayRef = useRef<L.ImageOverlay | null>(null);
+  const secondaryOverlayRef = useRef<L.ImageOverlay | null>(null);
   const vectorGroupRef = useRef<L.FeatureGroup | null>(null);
   const drawGroupRef = useRef<L.FeatureGroup | null>(null);
   const heatmapLayerRef = useRef<L.ImageOverlay | null>(null);
@@ -195,31 +202,88 @@ export const WorkstationMap: React.FC<WorkstationMapProps> = ({
     };
   }, []);
 
-  // Update Center / Bounds when Image changes
+  // Update Center & Raster Overlays (Primary + Secondary Comparison)
   useEffect(() => {
     const map = mapInstanceRef.current;
-    if (!map || !image || !image.metadata) return;
+    if (!map) return;
 
-    const [minLat, minLon, maxLat, maxLon] = image.metadata.bounds;
-    const centerLat = (minLat + maxLat) / 2;
-    const centerLon = (minLon + maxLon) / 2;
-
-    map.flyTo([centerLat, centerLon], 13, { duration: 1.2 });
-
-    // Update Image Raster Overlay
+    // Primary Raster Overlay
     if (imageOverlayRef.current) {
       map.removeLayer(imageOverlayRef.current);
+      imageOverlayRef.current = null;
     }
 
-    if (image.preview_url) {
+    if (image && image.metadata && image.preview_url) {
+      const [minLat, minLon, maxLat, maxLon] = image.metadata.bounds;
       const bounds: L.LatLngBoundsExpression = [[minLat, minLon], [maxLat, maxLon]];
-      const overlay = L.imageOverlay(image.preview_url, bounds, {
-        opacity: 0.88,
+      
+      const primaryOpacity = secondaryImage && compareMode === 'overlay'
+        ? (sliderPosition / 100) * 0.95
+        : 0.88;
+
+      const overlay = L.imageOverlay(resolveAssetUrl(image.preview_url), bounds, {
+        opacity: primaryOpacity,
         interactive: false
       }).addTo(map);
       imageOverlayRef.current = overlay;
+
+      const centerLat = (minLat + maxLat) / 2;
+      const centerLon = (minLon + maxLon) / 2;
+      map.flyTo([centerLat, centerLon], 13, { duration: 1.0 });
     }
-  }, [image]);
+
+    // Secondary Comparison Raster Overlay
+    if (secondaryOverlayRef.current) {
+      map.removeLayer(secondaryOverlayRef.current);
+      secondaryOverlayRef.current = null;
+    }
+
+    if (secondaryImage && secondaryImage.preview_url) {
+      const boundsArr = secondaryImage.metadata?.bounds || image?.metadata?.bounds;
+      if (boundsArr) {
+        const [minLat, minLon, maxLat, maxLon] = boundsArr;
+        const bounds: L.LatLngBoundsExpression = [[minLat, minLon], [maxLat, maxLon]];
+        
+        const secondaryOpacity = compareMode === 'overlay'
+          ? ((100 - sliderPosition) / 100) * 0.95
+          : 0.85;
+
+        const overlay = L.imageOverlay(resolveAssetUrl(secondaryImage.preview_url), bounds, {
+          opacity: secondaryOpacity,
+          interactive: false
+        }).addTo(map);
+        secondaryOverlayRef.current = overlay;
+      }
+    }
+  }, [image, secondaryImage, compareMode, sliderPosition]);
+
+  // Synchronize Change Heatmap Overlay
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    if (heatmapLayerRef.current) {
+      map.removeLayer(heatmapLayerRef.current);
+      heatmapLayerRef.current = null;
+    }
+
+    if (showHeatmap) {
+      const boundsArr = image?.metadata?.bounds || secondaryImage?.metadata?.bounds;
+      if (boundsArr) {
+        const [minLat, minLon, maxLat, maxLon] = boundsArr;
+        const bounds: L.LatLngBoundsExpression = [[minLat, minLon], [maxLat, maxLon]];
+        const overlay = L.imageOverlay(
+          resolveAssetUrl(secondaryImage?.preview_url || image?.preview_url),
+          bounds,
+          {
+            opacity: heatmapOpacity * 0.75,
+            interactive: false
+          }
+        ).addTo(map);
+        heatmapLayerRef.current = overlay;
+      }
+    }
+  }, [showHeatmap, heatmapOpacity, image, secondaryImage]);
 
   // Update External AOI GeoJSON
   useEffect(() => {

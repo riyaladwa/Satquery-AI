@@ -214,6 +214,43 @@ export const MinimalDashboard: React.FC = () => {
     }
   };
 
+  // Helper to find co-located secondary image for comparison
+  const findMatchingSecondaryImage = (primary: ImageRecord | null, targetMode: AnalysisMode, allImages: ImageRecord[]) => {
+    if (!primary || targetMode === 'single') return null;
+
+    const isDublin = primary.id.includes('dublin') || primary.filename.toLowerCase().includes('dublin');
+    const isBlr = primary.id.includes('blr') || primary.filename.toLowerCase().includes('bengaluru');
+    const isMum = primary.id.includes('mum') || primary.filename.toLowerCase().includes('mumbai');
+
+    if (targetMode === 'change') {
+      if (isDublin) {
+        return allImages.find((img) => img.id === 'img-dublin-s2-2023') ||
+               allImages.find((img) => (img.id.includes('dublin') || img.filename.includes('dublin')) && img.id !== primary.id) || null;
+      }
+      if (isBlr) {
+        return allImages.find((img) => img.id === 'img-blr-2023') ||
+               allImages.find((img) => (img.id.includes('blr') || img.filename.includes('bengaluru')) && img.id !== primary.id) || null;
+      }
+      return allImages.find((img) => img.id !== primary.id && img.modality === primary.modality) ||
+             allImages.find((img) => img.id !== primary.id) || null;
+    }
+
+    if (targetMode === 'cross_modal') {
+      if (isDublin) {
+        return allImages.find((img) => img.id === 'img-dublin-s1-2026') ||
+               allImages.find((img) => img.modality === 'SAR') || null;
+      }
+      if (isMum) {
+        return allImages.find((img) => img.id === 'img-mum-sar') ||
+               allImages.find((img) => img.modality === 'SAR') || null;
+      }
+      return allImages.find((img) => img.modality === 'SAR' && img.id !== primary.id) ||
+             allImages.find((img) => img.modality === 'SAR') || null;
+    }
+
+    return null;
+  };
+
   // Update secondary image when mode changes
   const handleModeChange = (newMode: AnalysisMode) => {
     if (newMode !== 'single') {
@@ -222,14 +259,16 @@ export const MinimalDashboard: React.FC = () => {
     setMode(newMode);
     if (newMode === 'single') {
       setSecondaryImage(null);
-    } else if (newMode === 'change') {
-      const s2_2023 = images.find((img) => img.id.includes('2023'));
-      setSecondaryImage(s2_2023 || images[1] || null);
-      if (!query) setQuery('Analyze built-up change between 2023 and 2026');
-    } else if (newMode === 'cross_modal') {
-      const s1_sar = images.find((img) => img.modality === 'SAR');
-      setSecondaryImage(s1_sar || images[2] || null);
-      if (!query) setQuery('Perform Optical + SAR joint analysis to verify water and built structures');
+    } else if (primaryImage) {
+      const match = findMatchingSecondaryImage(primaryImage, newMode, images);
+      setSecondaryImage(match);
+      if (!query || query.includes('Analyze') || query.includes('Perform')) {
+        if (newMode === 'change') {
+          setQuery('Analyze built-up change between 2023 and 2026');
+        } else if (newMode === 'cross_modal') {
+          setQuery('Perform Optical + SAR joint analysis to verify water and built structures');
+        }
+      }
     }
   };
 
@@ -467,7 +506,13 @@ export const MinimalDashboard: React.FC = () => {
                   value={primaryImage?.id || ''}
                   onChange={(e) => {
                     const found = images.find((i) => i.id === e.target.value);
-                    if (found) setPrimaryImage(found);
+                    if (found) {
+                      setPrimaryImage(found);
+                      if (mode !== 'single') {
+                        const match = findMatchingSecondaryImage(found, mode, images);
+                        if (match) setSecondaryImage(match);
+                      }
+                    }
                   }}
                   className="w-full px-3 py-1.5 bg-white border border-[#E3EAE5] rounded-lg text-xs font-medium text-[#17201B] focus:outline-hidden focus:border-[#167A4A] shadow-2xs"
                 >

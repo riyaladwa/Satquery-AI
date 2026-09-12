@@ -293,16 +293,20 @@ export const Workstation: React.FC = () => {
   const handleSearchSelect = (query: string) => {
     if (query.includes('53.34') || query.toLowerCase().includes('dublin') || query.includes('30UUE')) {
       const dublin = images.find(i => i.id === 'img-dublin-s2-2026');
+      const dublin2023 = images.find(i => i.id === 'img-dublin-s2-2023');
       if (dublin) {
         setSelectedImage(dublin);
         setTileId('30UUE');
         setSelectedDate('08 Sep 2026');
+        if (dublin2023) setSecondaryImage(dublin2023);
       }
     } else if (query.includes('12.95') || query.toLowerCase().includes('bengaluru')) {
       const blr = images.find(i => i.id === 'img-blr-2026');
+      const blr2023 = images.find(i => i.id === 'img-blr-2023');
       if (blr) {
         setSelectedImage(blr);
         setTileId('43PGN');
+        if (blr2023) setSecondaryImage(blr2023);
       }
     }
   };
@@ -524,6 +528,9 @@ export const Workstation: React.FC = () => {
         <main className="flex-1 h-full min-w-0 relative">
           <WorkstationMap
             image={selectedImage}
+            secondaryImage={secondaryImage}
+            compareMode={compareMode}
+            sliderPosition={sliderPosition}
             selectedSensor={selectedSensor}
             evidenceRegions={currentResponse?.evidence_regions || []}
             selectedEvidenceId={selectedEvidenceId}

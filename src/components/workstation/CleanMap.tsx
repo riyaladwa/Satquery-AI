@@ -30,11 +30,14 @@ export const CleanMap: React.FC<CleanMapProps> = ({
   const secondaryOverlayRef = useRef<L.ImageOverlay | null>(null);
   const vectorGroupRef = useRef<L.FeatureGroup | null>(null);
   const measureGroupRef = useRef<L.FeatureGroup | null>(null);
+  const lastFittedImageIdRef = useRef<string | null>(null);
 
   const [mouseCoords, setMouseCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(13);
   const [basemapType, setBasemapType] = useState<'satellite' | 'streets'>('satellite');
   const [activeViewMode, setActiveViewMode] = useState<'primary' | 'secondary' | 'split'>('primary');
+  const [isBlinking, setIsBlinking] = useState<boolean>(false);
+  const blinkIntervalRef = useRef<any>(null);
 
   // Interactive Tools: Pixel Inspector & Area Measurement
   const [isInspecting, setIsInspecting] = useState<boolean>(false);
@@ -261,7 +264,10 @@ export const CleanMap: React.FC<CleanMapProps> = ({
         primaryOverlayRef.current = overlay;
       }
 
-      map.fitBounds(bounds, { padding: [25, 25], maxZoom: 15 });
+      if (lastFittedImageIdRef.current !== primaryImage.id) {
+        map.fitBounds(bounds, { padding: [25, 25], maxZoom: 15 });
+        lastFittedImageIdRef.current = primaryImage.id;
+      }
     }
   }, [primaryImage, activeViewMode]);
 
@@ -285,7 +291,6 @@ export const CleanMap: React.FC<CleanMapProps> = ({
           interactive: false
         }).addTo(map);
         secondaryOverlayRef.current = overlay;
-        map.fitBounds(bounds, { padding: [25, 25], maxZoom: 15 });
       }
     }
   }, [secondaryImage, activeViewMode, primaryImage]);
@@ -363,6 +368,25 @@ export const CleanMap: React.FC<CleanMapProps> = ({
       map.fitBounds([[minLat, minLon], [maxLat, maxLon]], { padding: [30, 30] });
     }
   };
+
+  const handleToggleBlink = () => {
+    if (isBlinking) {
+      if (blinkIntervalRef.current) clearInterval(blinkIntervalRef.current);
+      setIsBlinking(false);
+      setActiveViewMode('primary');
+    } else {
+      setIsBlinking(true);
+      blinkIntervalRef.current = setInterval(() => {
+        setActiveViewMode((prev) => (prev === 'primary' ? 'secondary' : 'primary'));
+      }, 550);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (blinkIntervalRef.current) clearInterval(blinkIntervalRef.current);
+    };
+  }, []);
 
   return (
     <div className={`relative w-full h-full bg-slate-100 overflow-hidden ${className}`}>
@@ -473,6 +497,19 @@ export const CleanMap: React.FC<CleanMapProps> = ({
               type="button"
             >
               T2 ({secondaryImage.acquisition_date || 'Secondary'})
+            </button>
+            <span className="text-[#E3EAE5]">|</span>
+            <button
+              onClick={handleToggleBlink}
+              className={`px-2 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                isBlinking
+                  ? 'bg-amber-500 text-white font-bold animate-pulse'
+                  : 'text-[#66736B] hover:text-[#17201B] hover:bg-[#FBFDFB]'
+              }`}
+              type="button"
+              title="Rapidly alternate between T1 and T2 scenes to spot changes visually"
+            >
+              <span>{isBlinking ? 'Stop' : 'Blink'}</span>
             </button>
           </div>
         )}
