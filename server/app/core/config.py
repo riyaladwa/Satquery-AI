@@ -22,8 +22,11 @@ class Settings(BaseModel):
     PREVIEW_DIR: Path = DATA_DIR / "previews"
     
     # Database configuration with PostgreSQL & Supabase support
-    raw_db_url: str = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_DB_URL") or f"sqlite:///{DATA_DIR}/satquery.db"
-    DATABASE_URL: str = raw_db_url.replace("postgres://", "postgresql://", 1) if raw_db_url.startswith("postgres://") else raw_db_url
+    raw_db_url: str = os.getenv("DATABASE_URL") or os.getenv("SUPABASE_DB_URL") or ""
+    if not raw_db_url or "YOUR-PASSWORD" in raw_db_url or "YOUR_PASSWORD" in raw_db_url:
+        DATABASE_URL: str = f"sqlite:///{DATA_DIR}/satquery.db"
+    else:
+        DATABASE_URL: str = raw_db_url.replace("postgres://", "postgresql://", 1) if raw_db_url.startswith("postgres://") else raw_db_url
     
     # Supabase Integration Parameters
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", os.getenv("VITE_SUPABASE_URL", ""))
