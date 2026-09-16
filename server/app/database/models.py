@@ -175,3 +175,21 @@ class UserSettings(Base):
     auto_tts = Column(Boolean, default=False)
     confidence_threshold = Column(Float, default=60.0)
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+class ProjectCollaborator(Base):
+    __tablename__ = "project_collaborators"
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    user_email = Column(String(255), nullable=False)
+    user_name = Column(String(255), nullable=True)
+    role = Column(String(32), default="collaborator")  # owner, collaborator, viewer
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class ProjectActivity(Base):
+    __tablename__ = "project_activities"
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+    user_name = Column(String(255), default="Analyst")
+    action = Column(String(255), nullable=False)
+    details = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

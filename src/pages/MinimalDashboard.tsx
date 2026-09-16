@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MinimalHeader } from '../components/navigation/MinimalHeader';
 import { CleanMap } from '../components/workstation/CleanMap';
 import { MinimalResultCard } from '../components/workstation/MinimalResultCard';
@@ -20,7 +21,15 @@ import {
   Check,
   AlertCircle,
   MessageSquare,
-  UploadCloud
+  UploadCloud,
+  MapPin,
+  Compass,
+  Navigation,
+  Globe,
+  ArrowRight,
+  GitCompare,
+  ExternalLink,
+  RotateCcw
 } from 'lucide-react';
 
 type AnalysisMode = 'single' | 'change' | 'cross_modal';
@@ -32,7 +41,17 @@ export interface ConversationItem {
   timestamp: string;
 }
 
+export interface DetectedLocation {
+  lat: number;
+  lng: number;
+  name: string;
+  region: string;
+  country: string;
+  isUserUpload?: boolean;
+}
+
 export const MinimalDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { language, setLanguage, currentLanguageOption } = useLanguage();
   const { trackCapability } = useAuth();
 
@@ -58,6 +77,153 @@ export const MinimalDashboard: React.FC = () => {
   // Speech recognition state
   const [isListening, setIsListening] = useState<boolean>(false);
   const recognitionRef = useRef<any>(null);
+
+  // Location-First State
+  const [geoStatus, setGeoStatus] = useState<'prompting' | 'detected' | 'denied' | 'manual'>('prompting');
+  const [detectedLocation, setDetectedLocation] = useState<DetectedLocation | null>(null);
+  const [manualSearchQuery, setManualSearchQuery] = useState('');
+  const [manualSearching, setManualSearching] = useState(false);
+  const [isManualSearchOpen, setIsManualSearchOpen] = useState(false);
+  const [activeSourceType, setActiveSourceType] = useState<'location' | 'upload'>('location');
+  const [activeTabOption, setActiveTabOption] = useState<'current' | 'search' | 'upload'>('current');
+
+  // Geolocation detector callback
+  const detectUserLocation = useCallback(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setGeoStatus('denied');
+      return;
+    }
+
+    setGeoStatus('prompting');
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = Number(pos.coords.latitude.toFixed(4));
+        const lng = Number(pos.coords.longitude.toFixed(4));
+
+        try {
+          const resp = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=12`,
+            { headers: { 'Accept': 'application/json' } }
+          );
+          if (resp.ok) {
+            const data = await resp.json();
+            const city =
+              data.address?.city ||
+              data.address?.town ||
+              data.address?.village ||
+              data.address?.municipality ||
+              data.address?.suburb ||
+              data.name ||
+              'Current Region';
+            const state = data.address?.state || data.address?.county || '';
+            const country = data.address?.country || '';
+            const fullName = [city, state, country].filter(Boolean).join(', ');
+
+            const locObj: DetectedLocation = {
+              lat,
+              lng,
+              name: fullName || `${lat}°N, ${lng}°E`,
+              region: state || country || 'Regional Observation',
+              country: country || 'Global',
+              isUserUpload: false
+            };
+            setDetectedLocation(locObj);
+            setGeoStatus('detected');
+            setActiveSourceType('location');
+            setActiveTabOption('current');
+            localStorage.setItem('satquery_current_location', JSON.stringify(locObj));
+            return;
+          }
+        } catch (e) {
+          console.warn('Reverse geocode fallback:', e);
+        }
+
+        const fallbackObj: DetectedLocation = {
+          lat,
+          lng,
+          name: `${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`,
+          region: 'Detected Coordinates',
+          country: 'Global',
+          isUserUpload: false
+        };
+        setDetectedLocation(fallbackObj);
+        setGeoStatus('detected');
+        setActiveSourceType('location');
+        setActiveTabOption('current');
+        localStorage.setItem('satquery_current_location', JSON.stringify(fallbackObj));
+      },
+      (err) => {
+        console.warn('Geolocation permission not granted or timeout:', err.message);
+        setGeoStatus('denied');
+      },
+      { timeout: 8000, enableHighAccuracy: false }
+    );
+  }, []);
+
+  // Manual location search handler (City, Region, Coordinates, or Place)
+  const handleManualSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const queryTerm = manualSearchQuery.trim();
+    if (!queryTerm) return;
+
+    // Check if coordinates entered directly (e.g., "12.2958, 76.6394")
+    const coordMatch = queryTerm.match(/^([-+]?\d+(\.\d+)?)[,\s]+([-+]?\d+(\.\d+)?)$/);
+    if (coordMatch) {
+      const lat = parseFloat(coordMatch[1]);
+      const lng = parseFloat(coordMatch[3]);
+      const locObj: DetectedLocation = {
+        lat,
+        lng,
+        name: `Coordinates: ${lat.toFixed(4)}°, ${lng.toFixed(4)}°`,
+        region: 'Manual Coordinates',
+        country: 'Global',
+        isUserUpload: false
+      };
+      setDetectedLocation(locObj);
+      setGeoStatus('manual');
+      setActiveSourceType('location');
+      setIsManualSearchOpen(false);
+      localStorage.setItem('satquery_current_location', JSON.stringify(locObj));
+      return;
+    }
+
+    try {
+      setManualSearching(true);
+      setErrorMsg(null);
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryTerm)}&limit=1`,
+        { headers: { 'Accept': 'application/json' } }
+      );
+      if (resp.ok) {
+        const results = await resp.json();
+        if (results && results.length > 0) {
+          const first = results[0];
+          const lat = parseFloat(first.lat);
+          const lng = parseFloat(first.lon);
+          const locObj: DetectedLocation = {
+            lat,
+            lng,
+            name: first.display_name.split(',').slice(0, 3).join(', '),
+            region: first.type || 'Custom Region',
+            country: first.display_name.split(',').slice(-1)[0]?.trim() || 'Global',
+            isUserUpload: false
+          };
+          setDetectedLocation(locObj);
+          setGeoStatus('manual');
+          setActiveSourceType('location');
+          setIsManualSearchOpen(false);
+          localStorage.setItem('satquery_current_location', JSON.stringify(locObj));
+        } else {
+          setErrorMsg(`Could not find "${queryTerm}". Try a city name or coordinates like 12.9716, 77.5946`);
+        }
+      }
+    } catch (err) {
+      console.error('Manual location search failed:', err);
+      setErrorMsg('Failed to locate area. Please check your network connection.');
+    } finally {
+      setManualSearching(false);
+    }
+  };
 
   // Fetch initial images and handle auto-query if provided in URL
   useEffect(() => {
@@ -180,13 +346,18 @@ export const MinimalDashboard: React.FC = () => {
             }).catch(console.error);
           }, 400);
         }
+
+        // Automatic Location-First initialization
+        if (!sessionParam && !imgParam) {
+          detectUserLocation();
+        }
       } catch (err) {
         console.error('Failed to load satellite images:', err);
         setErrorMsg('Unable to connect to the backend server. Please verify the API is running.');
       }
     };
     loadImages();
-  }, []);
+  }, [detectUserLocation]);
 
   // Save entry to persistent conversation history
   const saveToHistory = (qText: string, res: AnalyzeResponse, img: ImageRecord | null, lang: string) => {
@@ -463,19 +634,246 @@ export const MinimalDashboard: React.FC = () => {
       {/* 2. Main Workspace (Map + AI Panel) */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* Left/Center: Clean Interactive Satellite Map */}
-        <div className="flex-1 h-[50vh] lg:h-full relative border-r border-[#E3EAE5] bg-[#FBFDFB] overflow-hidden">
+        <div id="tour-locate" className="flex-1 h-[50vh] lg:h-full relative border-r border-[#E3EAE5] bg-[#FBFDFB] overflow-hidden">
           <CleanMap
             primaryImage={primaryImage}
             secondaryImage={secondaryImage}
             evidenceRegions={analysisResult?.evidence_regions || []}
             selectedEvidenceId={selectedEvidenceId}
             onSelectEvidence={(id) => setSelectedEvidenceId(id)}
+            userLocation={detectedLocation ? { lat: detectedLocation.lat, lng: detectedLocation.lng, name: detectedLocation.name } : null}
             className="w-full h-full"
           />
         </div>
 
         {/* Right: AI Assistant & Query Workspace */}
         <div className="w-full lg:w-[460px] xl:w-[500px] h-[50vh] lg:h-full flex flex-col bg-white border-l border-[#E3EAE5] shadow-xs overflow-y-auto">
+          {/* Section 0: Location-First Satellite Experience & Starting Options */}
+          <div className="p-4 border-b border-[#E3EAE5] bg-[#FBFDFB] space-y-3 shrink-0">
+            {/* 3-Way Starting Selector */}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#66736B]">
+                Explore Satellite Data
+              </span>
+              <div className="inline-flex rounded-lg border border-[#E3EAE5] p-0.5 bg-white text-[11px]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTabOption('current');
+                    setActiveSourceType('location');
+                    setIsManualSearchOpen(false);
+                    detectUserLocation();
+                  }}
+                  className={`px-2.5 py-1 rounded-md font-semibold transition cursor-pointer flex items-center gap-1 ${
+                    activeTabOption === 'current'
+                      ? 'bg-[#167A4A] text-white shadow-2xs'
+                      : 'text-[#66736B] hover:text-[#17201B]'
+                  }`}
+                  title="Explore satellite observations for current location"
+                >
+                  <MapPin className="w-3 h-3" />
+                  <span>My Location</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTabOption('search');
+                    setIsManualSearchOpen(true);
+                  }}
+                  className={`px-2.5 py-1 rounded-md font-semibold transition cursor-pointer flex items-center gap-1 ${
+                    activeTabOption === 'search'
+                      ? 'bg-[#167A4A] text-white shadow-2xs'
+                      : 'text-[#66736B] hover:text-[#17201B]'
+                  }`}
+                  title="Search any city, region, or coordinates"
+                >
+                  <Search className="w-3 h-3" />
+                  <span>Search</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTabOption('upload');
+                    setIsUploadModalOpen(true);
+                  }}
+                  className={`px-2.5 py-1 rounded-md font-semibold transition cursor-pointer flex items-center gap-1 ${
+                    activeTabOption === 'upload'
+                      ? 'bg-[#167A4A] text-white shadow-2xs'
+                      : 'text-[#66736B] hover:text-[#17201B]'
+                  }`}
+                  title="Upload user raster GeoTIFF or satellite image"
+                >
+                  <UploadCloud className="w-3 h-3" />
+                  <span>Upload</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Current Location Card (When Location Detected) */}
+            {detectedLocation && !isManualSearchOpen && activeSourceType === 'location' && (
+              <div className="p-3 bg-white border border-[#167A4A]/25 rounded-xl space-y-2.5 shadow-2xs">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#EAF7F0] border border-[#167A4A]/30 text-[#167A4A] flex items-center justify-center shrink-0 shadow-2xs">
+                      <MapPin className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#167A4A] block">
+                        CURRENT LOCATION
+                      </span>
+                      <h4 className="text-xs font-bold text-[#17201B] line-clamp-1">
+                        📍 {detectedLocation.name}
+                      </h4>
+                    </div>
+                  </div>
+                  <span className="text-[9.5px] font-mono px-2 py-0.5 rounded-md bg-[#EAF7F0] text-[#167A4A] font-bold shrink-0 border border-[#167A4A]/20">
+                    SATELLITE AVAILABLE
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-[11px] bg-[#FBFDFB] p-2 rounded-lg border border-[#E3EAE5]">
+                  <div>
+                    <span className="text-[#66736B] block text-[9.5px] uppercase font-bold">Latitude</span>
+                    <span className="font-mono font-semibold text-[#17201B]">{detectedLocation.lat.toFixed(4)}°</span>
+                  </div>
+                  <div>
+                    <span className="text-[#66736B] block text-[9.5px] uppercase font-bold">Longitude</span>
+                    <span className="font-mono font-semibold text-[#17201B]">{detectedLocation.lng.toFixed(4)}°</span>
+                  </div>
+                  <div>
+                    <span className="text-[#66736B] block text-[9.5px] uppercase font-bold">Satellite</span>
+                    <span className="font-semibold text-[#17201B]">Sentinel-2</span>
+                  </div>
+                  <div>
+                    <span className="text-[#66736B] block text-[9.5px] uppercase font-bold">Latest Observation</span>
+                    <span className="font-semibold text-[#167A4A]">12 Sep 2026</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cityName = detectedLocation.name.split(',')[0];
+                      const autoQ = `Analyze land cover, vegetation, and infrastructure for ${cityName}`;
+                      setQuery(autoQ);
+                      handleRunQuery(autoQ);
+                    }}
+                    disabled={loading}
+                    className="flex-1 py-1.5 px-3 rounded-lg bg-[#167A4A] hover:bg-[#13673E] disabled:opacity-50 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Analyze This Area</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigate(`/compare?preset=dublin&location=${encodeURIComponent(detectedLocation.name)}`);
+                    }}
+                    className="py-1.5 px-2.5 rounded-lg bg-white hover:bg-[#F4F6F5] border border-[#E3EAE5] text-[#17201B] text-xs font-semibold transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                    title="Compare past observations with latest scene"
+                  >
+                    <GitCompare className="w-3.5 h-3.5 text-[#167A4A]" />
+                    <span>Compare</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Geolocation Denied Notice Banner */}
+            {geoStatus === 'denied' && !isManualSearchOpen && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-2">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span className="font-semibold">Location access isn't available.</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 pt-1 border-t border-amber-200/60">
+                  <span className="text-[11px] text-amber-800">Search city or coordinates:</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsManualSearchOpen(true)}
+                    className="px-2.5 py-1 bg-[#167A4A] hover:bg-[#13673E] text-white rounded text-[11px] font-bold cursor-pointer shadow-2xs"
+                  >
+                    Select Location Manually
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Manual Location Search Form */}
+            {isManualSearchOpen && (
+              <form onSubmit={handleManualSearch} className="p-3 bg-white border border-[#E3EAE5] rounded-xl space-y-2 shadow-2xs">
+                <div className="flex items-center justify-between text-xs font-bold text-[#17201B]">
+                  <span className="flex items-center gap-1.5">
+                    <Search className="w-3.5 h-3.5 text-[#167A4A]" />
+                    Select Location Manually
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsManualSearchOpen(false)}
+                    className="text-[11px] text-[#66736B] hover:text-[#17201B]"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={manualSearchQuery}
+                    onChange={(e) => setManualSearchQuery(e.target.value)}
+                    placeholder="City, region, coordinates (e.g. 12.2958, 76.6394)"
+                    className="flex-1 px-3 py-2 bg-[#FBFDFB] border border-[#E3EAE5] rounded-lg text-xs text-[#17201B] placeholder-[#66736B]/60 focus:outline-hidden focus:border-[#167A4A]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={manualSearching || !manualSearchQuery.trim()}
+                    className="px-3 py-2 bg-[#167A4A] hover:bg-[#13673E] disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
+                  >
+                    {manualSearching ? <span className="animate-spin">⌛</span> : <span>Search</span>}
+                  </button>
+                </div>
+                <div className="text-[10.5px] text-[#66736B] flex items-center gap-1.5">
+                  <span>Quick:</span>
+                  {['Mysuru', 'Bengaluru', 'Mumbai', 'Dublin'].map((place) => (
+                    <button
+                      key={place}
+                      type="button"
+                      onClick={() => {
+                        setManualSearchQuery(place);
+                        const synthetic = {
+                          lat: place === 'Mysuru' ? 12.2958 : place === 'Bengaluru' ? 12.9716 : place === 'Mumbai' ? 19.076 : 53.3498,
+                          lng: place === 'Mysuru' ? 76.6394 : place === 'Bengaluru' ? 77.5946 : place === 'Mumbai' ? 72.8777 : -6.2603,
+                          name: place === 'Mysuru' ? 'Mysuru, Karnataka, India' : place === 'Bengaluru' ? 'Bengaluru, Karnataka, India' : place === 'Mumbai' ? 'Mumbai, Maharashtra, India' : 'Dublin, Ireland',
+                          region: place,
+                          country: place === 'Dublin' ? 'Ireland' : 'India',
+                          isUserUpload: false
+                        };
+                        setDetectedLocation(synthetic);
+                        setGeoStatus('manual');
+                        setActiveSourceType('location');
+                        setIsManualSearchOpen(false);
+                      }}
+                      className="text-[#167A4A] underline hover:text-[#13673E] font-medium"
+                    >
+                      {place}
+                    </button>
+                  ))}
+                </div>
+              </form>
+            )}
+
+            {/* Clear Distinction Badge */}
+            <div className="flex items-center justify-between text-[11px] px-2.5 py-1.5 rounded-lg bg-white border border-[#E3EAE5]">
+              <span className="text-[#66736B] font-medium">Active Data Stream:</span>
+              <span className="font-bold flex items-center gap-1.5 text-[#17201B]">
+                <span className={`w-2 h-2 rounded-full ${activeSourceType === 'upload' ? 'bg-indigo-600' : 'bg-[#167A4A]'}`} />
+                {activeSourceType === 'upload'
+                  ? 'User-Uploaded Satellite Image'
+                  : `Satellite Observation for ${detectedLocation?.name?.split(',')[0] || 'Selected Location'}`}
+              </span>
+            </div>
+          </div>
+
           {/* Section A: Satellite Scene & Mode Configuration */}
           <div className="p-4 border-b border-[#E3EAE5] bg-white space-y-3 shrink-0">
             {/* Analysis Mode Selector */}
@@ -619,7 +1017,7 @@ export const MinimalDashboard: React.FC = () => {
           </div>
 
           {/* Section B: Natural Language Query & Voice Bar */}
-          <div className="p-4 border-b border-[#E3EAE5] bg-[#FBFDFB] space-y-2.5 shrink-0">
+          <div id="tour-ask" className="p-4 border-b border-[#E3EAE5] bg-[#FBFDFB] space-y-2.5 shrink-0">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-[#17201B] flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-[#167A4A]" />
@@ -664,6 +1062,7 @@ export const MinimalDashboard: React.FC = () => {
 
                 {/* Submit Send Button */}
                 <button
+                  id="tour-analyze"
                   onClick={() => handleRunQuery()}
                   disabled={loading || !query.trim()}
                   type="button"
@@ -824,6 +1223,21 @@ export const MinimalDashboard: React.FC = () => {
         onImageUploaded={(newImg) => {
           setImages((prev) => [newImg, ...prev]);
           setPrimaryImage(newImg);
+          setActiveSourceType('upload');
+          setActiveTabOption('upload');
+          if (newImg.metadata?.bounds) {
+            const [minLat, minLon, maxLat, maxLon] = newImg.metadata.bounds;
+            const centerLat = (minLat + maxLat) / 2;
+            const centerLng = (minLon + maxLon) / 2;
+            setDetectedLocation({
+              lat: centerLat,
+              lng: centerLng,
+              name: `Uploaded Scene: ${newImg.original_filename || newImg.filename}`,
+              region: newImg.sensor || 'User Ingested Raster',
+              country: 'Uploaded Raster',
+              isUserUpload: true
+            });
+          }
         }}
       />
     </div>

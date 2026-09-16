@@ -9,9 +9,11 @@ import {
   ChevronUp,
   FileDown,
   Layers,
-  Sparkles
+  Sparkles,
+  FolderPlus
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { SaveToProjectModal } from '../collaboration/SaveToProjectModal';
 
 interface MinimalResultCardProps {
   analysis: AnalyzeResponse;
@@ -32,6 +34,7 @@ export const MinimalResultCard: React.FC<MinimalResultCardProps> = ({
   const [timelineExpanded, setTimelineExpanded] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
   const [reportStatus, setReportStatus] = useState<'idle' | 'generating' | 'downloaded'>('idle');
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
 
   // Compute text answer in the user's active language
   let displayAnswer = analysis.answer;
@@ -140,6 +143,16 @@ export const MinimalResultCard: React.FC<MinimalResultCardProps> = ({
                 <span>{downloadingReport ? 'Compiling PDF...' : 'Official PDF Report'}</span>
               </>
             )}
+          </button>
+
+          <button
+            onClick={() => setIsSaveModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E3EAE5] bg-white hover:bg-[#FBFDFB] text-[#17201B] hover:text-[#167A4A] text-xs font-bold shadow-2xs transition-all cursor-pointer"
+            title="Save this analysis into a collaborative workspace"
+            type="button"
+          >
+            <FolderPlus className="w-3.5 h-3.5 text-[#167A4A]" />
+            <span>Save to Project</span>
           </button>
         </div>
 
@@ -269,6 +282,13 @@ export const MinimalResultCard: React.FC<MinimalResultCardProps> = ({
           </div>
         )}
       </div>
+
+      <SaveToProjectModal
+        isOpen={isSaveModalOpen}
+        onClose={() => setIsSaveModalOpen(false)}
+        sessionId={analysis.session_id}
+        defaultTitle={`Analysis: ${analysis.query.slice(0, 45)}...`}
+      />
     </div>
   );
 };

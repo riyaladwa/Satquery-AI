@@ -208,6 +208,61 @@ export const api = {
   }) {
     const res = await axios.put(`${API_BASE}/settings`, settings);
     return res.data;
+  },
+
+  async chatAssistant(payload: {
+    message: string;
+    current_page?: string;
+    page_context?: Record<string, any>;
+    history?: { role: string; content: string }[];
+  }): Promise<{ reply: string; action_links: { label: string; to: string }[]; source: string }> {
+    const res = await axios.post(`${API_BASE}/chat/assistant`, payload);
+    return res.data;
+  },
+
+  async explainComparison(payload: {
+    image_a_meta: Record<string, any>;
+    image_b_meta: Record<string, any>;
+    change_stats: Record<string, any>;
+    location_name?: string;
+  }) {
+    const res = await axios.post(`${API_BASE}/compare/explain`, payload);
+    return res.data;
+  },
+
+  async getProjectDetail(id: number | string) {
+    const res = await axios.get(`${API_BASE}/projects/${id}`);
+    return res.data;
+  },
+
+  async updateProject(id: number | string, payload: { name?: string; description?: string }) {
+    const res = await axios.put(`${API_BASE}/projects/${id}`, payload);
+    return res.data;
+  },
+
+  async deleteProject(id: number | string) {
+    const res = await axios.delete(`${API_BASE}/projects/${id}`);
+    return res.data;
+  },
+
+  async addCollaborator(id: number | string, payload: { email: string; name?: string; role: string; added_by?: string }) {
+    const res = await axios.post(`${API_BASE}/projects/${id}/collaborators`, payload);
+    return res.data;
+  },
+
+  async saveAnalysisToProject(projectId: number | string, payload: { session_id: string; title?: string; added_by?: string }) {
+    const res = await axios.post(`${API_BASE}/projects/${projectId}/analyses`, payload);
+    return res.data;
+  },
+
+  async getProjectActivities(projectId: number | string) {
+    const res = await axios.get(`${API_BASE}/projects/${projectId}/activity`);
+    return res.data;
+  },
+
+  async getSharedProject(token: string) {
+    const res = await axios.get(`${API_BASE}/projects/shared/${token}`);
+    return res.data;
   }
 };
 

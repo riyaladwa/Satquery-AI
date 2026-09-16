@@ -25,7 +25,8 @@ import {
   Mic,
   Globe,
   ShieldCheck,
-  Volume2
+  Volume2,
+  Users
 } from 'lucide-react';
 
 export const MinimalLanding: React.FC = () => {
@@ -61,112 +62,63 @@ export const MinimalLanding: React.FC = () => {
 
   const capabilities = [
     {
-      title: '1. Interactive Satellite Map',
-      desc: 'Pan, zoom, high-resolution satellite imagery, and dynamic AI-grounded vector overlays.',
-      icon: Map,
-      query: 'What is visible in this image?'
-    },
-    {
-      title: '2. AI Change Heatmap',
-      desc: 'Bi-temporal difference mapping with change heatmaps and hectare footprint deltas.',
-      icon: Flame,
-      query: 'What changed between these images?'
-    },
-    {
-      title: '3. Query-Based Object Highlighting',
-      desc: 'Segment and highlight ground targets directly on the satellite map from text queries.',
-      icon: Crosshair,
-      query: 'Highlight the water bodies'
-    },
-    {
-      title: '4. Land Cover Classification',
-      desc: 'Multi-class semantic identification across water, vegetation, agriculture, and built-up surfaces.',
-      icon: Layers,
-      query: 'Classify land cover distribution'
-    },
-    {
-      title: '5. Optical vs SAR Comparison',
-      desc: 'Joint cross-sensor analysis combining Sentinel-2 optical bands with Sentinel-1 radar backscatter.',
-      icon: Radar,
-      query: 'Compare these optical and SAR images'
-    },
-    {
-      title: '6. AI Explanation & Evidence Panel',
-      desc: 'Explainable answers grounded in calibrated reflectance, spatial coordinates, and vector bounds.',
-      icon: Eye,
-      query: 'What is visible in this image?'
-    },
-    {
-      title: '7. Agent Execution Timeline',
-      desc: 'Compact observable audit trail tracking query understanding, model routing, and evidence generation.',
-      icon: Cpu,
-      query: 'Are there buildings?'
-    },
-    {
-      title: '8. Multiple Questions on Same Image',
-      desc: 'Continuous conversational thread on the uploaded satellite scene without re-uploading.',
+      title: '1. Natural Language Satellite Queries',
+      desc: 'Ask complex geospatial questions in plain English or voice dictation with automatic intent parsing.',
       icon: MessageSquare,
-      query: 'What is visible here?'
+      query: 'What is visible in this satellite scene?',
+      actionText: 'Try Query'
     },
     {
-      title: '9. Conversation History',
-      desc: 'Persistent analysis archive with query timestamps, languages, and one-click session restore.',
-      icon: Clock,
-      query: 'Highlight buildings'
-    },
-    {
-      title: '10. Area Calculation',
-      desc: 'WGS-84 geodetic measurements providing exact hectare and square-kilometer calculations.',
-      icon: Ruler,
-      query: 'Calculate the water area'
-    },
-    {
-      title: '11. Disaster Analysis Mode',
-      desc: 'All-weather radar flood inundation mapping and post-event structural impact detection.',
-      icon: Waves,
-      query: 'Identify flood-affected areas'
-    },
-    {
-      title: '12. Agriculture Monitoring',
-      desc: 'Crop canopy vigor tracking, NDVI vegetation monitoring, and parcel boundaries.',
-      icon: Sprout,
-      query: 'Identify agricultural areas'
-    },
-    {
-      title: '13. Urban Growth Analysis',
-      desc: 'Detect city expansion, transit arteries, and concrete density increases between dates.',
-      icon: Building2,
-      query: 'Has this city expanded between 2023 and 2026?'
-    },
-    {
-      title: '14. Automatic PDF Report',
-      desc: 'One-click publication-grade PDF briefings with metadata, evidence tables, and telemetry.',
-      icon: FileText,
-      query: 'Is there a water body?'
-    },
-    {
-      title: '15. Confidence + Reliability Score',
-      desc: 'Calibrated radiometric confidence percentages and explainable reliability ratings.',
-      icon: ShieldCheck,
-      query: 'Are there buildings?'
-    },
-    {
-      title: '16. Smart Query Suggestions',
-      desc: 'Context-aware prompt suggestions tailored to single, bi-temporal, and radar scene configurations.',
+      title: '2. AI-Powered Analysis',
+      desc: 'Specialist vision-language models for classification, area estimation, and land-use mapping.',
       icon: Sparkles,
-      query: 'Are there any water bodies?'
+      query: 'Describe the major land cover and infrastructure',
+      actionText: 'Run Analysis'
     },
     {
-      title: '17. Voice Command',
-      desc: 'Native microphone dictation converting natural speech into precise spatial queries.',
-      icon: Mic,
-      query: 'Show agricultural areas'
+      title: '3. Multimodal Optical + SAR Analysis',
+      desc: 'Joint fusion combining Sentinel-2 multi-spectral bands with Sentinel-1 radar backscatter for cloud penetration.',
+      icon: Radar,
+      query: 'Compare these optical and SAR radar observations',
+      link: '/compare?preset=mumbai',
+      actionText: 'Inspect Fusion'
     },
     {
-      title: '18. Multilingual Viewer',
-      desc: 'Synchronized text explanations and voice audio playback across 8 Indian languages.',
-      icon: Globe,
-      query: 'Is there a water body in this scene?'
+      title: '4. Bi-Temporal Change Detection',
+      desc: 'Sub-pixel co-registration calculating spectral deltas, building growth, and water boundary changes.',
+      icon: Flame,
+      query: 'What changed between these two acquisition dates?',
+      link: '/compare',
+      actionText: 'Compare Scenes'
+    },
+    {
+      title: '5. Query-Based Object Detection',
+      desc: 'Pinpoint, highlight, and count spatial ground targets directly on the interactive map from text queries.',
+      icon: Crosshair,
+      query: 'Highlight the water bodies and coastal features',
+      actionText: 'Detect Objects'
+    },
+    {
+      title: '6. Interactive Satellite Map',
+      desc: 'Pan, zoom, explore high-resolution Sentinel rasters, inspect pixel properties, and draw custom AOIs.',
+      icon: Map,
+      query: 'Inspect geographic features in this area',
+      actionText: 'Open Map'
+    },
+    {
+      title: '7. AI Evidence & Explanation',
+      desc: 'Explainable answers backed by geodetic vector polygons, calibrated reflectance, and reliability metrics.',
+      icon: Eye,
+      query: 'Explain why these areas were classified as urban',
+      actionText: 'View Evidence'
+    },
+    {
+      title: '8. Collaborative Satellite Investigation',
+      desc: 'Create team projects, assign Owner/Collaborator roles, share live studies, and trace activity timelines.',
+      icon: Users,
+      query: 'Collaborate on this satellite study',
+      link: '/collaborate',
+      actionText: 'Collaborate'
     }
   ];
 

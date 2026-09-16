@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Globe, Check, Sparkles, FileText, Clock, Compass, GitCompare, LogOut, User as UserIcon } from 'lucide-react';
+import { Globe, Check, Sparkles, FileText, Clock, Compass, GitCompare, LogOut, User as UserIcon, Users, Search, Home } from 'lucide-react';
 import { useLanguage, SUPPORTED_LANGUAGES } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -27,12 +27,12 @@ export const MinimalHeader: React.FC = () => {
   }, []);
 
   return (
-    <header className="h-16 bg-white border-b border-[#E3EAE5] px-4 sm:px-6 flex items-center justify-between z-30 select-none shrink-0 sticky top-0 shadow-2xs">
+    <header className="h-16 bg-white border-b border-[#E3EAE5] px-3 sm:px-6 flex items-center justify-between z-30 select-none shrink-0 sticky top-0 shadow-2xs">
       {/* Left: Brand Identity */}
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate('/')}
-          className="flex items-center gap-2.5 text-left cursor-pointer focus:outline-hidden group"
+          className="flex items-center gap-2 text-left cursor-pointer focus:outline-hidden group"
           type="button"
         >
           <div className="w-9 h-9 rounded-lg bg-[#EAF7F0] border border-[#167A4A]/20 flex items-center justify-center text-[#167A4A] shadow-2xs group-hover:bg-[#167A4A] group-hover:text-white transition-colors">
@@ -47,19 +47,48 @@ export const MinimalHeader: React.FC = () => {
                 AI
               </span>
             </div>
-            <span className="text-[10.5px] text-[#66736B] hidden sm:inline font-medium">
+            <span className="text-[10.5px] text-[#66736B] hidden xl:inline font-medium">
               Multimodal Remote Sensing Assistant
             </span>
           </div>
         </button>
       </div>
 
-      {/* Center: Navigation Tabs (Dashboard, History, Reports) */}
-      <nav className="flex items-center gap-1.5 sm:gap-2">
+      {/* Center: Global Navigation Links (Explore, Analyze, Compare, History, Reports, Collaborate) */}
+      <nav className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto max-w-full py-1">
+        <NavLink
+          to="/"
+          end
+          className={({ isActive }) =>
+            `flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+              isActive
+                ? 'bg-[#EAF7F0] text-[#167A4A] border border-[#167A4A]/20 shadow-2xs font-bold'
+                : 'text-[#66736B] hover:text-[#17201B] hover:bg-[#FBFDFB] border border-transparent'
+            }`
+          }
+        >
+          <Home className="w-3.5 h-3.5" />
+          <span className="hidden md:inline">Home</span>
+        </NavLink>
+
+        <NavLink
+          to="/explore"
+          className={({ isActive }) =>
+            `flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+              isActive
+                ? 'bg-[#EAF7F0] text-[#167A4A] border border-[#167A4A]/20 shadow-2xs font-bold'
+                : 'text-[#66736B] hover:text-[#17201B] hover:bg-[#FBFDFB] border border-transparent'
+            }`
+          }
+        >
+          <Search className="w-3.5 h-3.5" />
+          <span>Explore</span>
+        </NavLink>
+
         <NavLink
           to="/app"
           className={({ isActive }) =>
-            `flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            `flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
               isActive
                 ? 'bg-[#EAF7F0] text-[#167A4A] border border-[#167A4A]/20 shadow-2xs font-bold'
                 : 'text-[#66736B] hover:text-[#17201B] hover:bg-[#FBFDFB] border border-transparent'
@@ -67,41 +96,14 @@ export const MinimalHeader: React.FC = () => {
           }
         >
           <Sparkles className="w-3.5 h-3.5" />
-          <span>{t('dashboard')}</span>
-        </NavLink>
-
-        <NavLink
-          to="/history"
-          className={({ isActive }) =>
-            `flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              isActive
-                ? 'bg-[#EAF7F0] text-[#167A4A] border border-[#167A4A]/20 shadow-2xs font-bold'
-                : 'text-[#66736B] hover:text-[#17201B] hover:bg-[#FBFDFB] border border-transparent'
-            }`
-          }
-        >
-          <Clock className="w-3.5 h-3.5" />
-          <span>{t('history')}</span>
-        </NavLink>
-
-        <NavLink
-          to="/reports"
-          className={({ isActive }) =>
-            `flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              isActive
-                ? 'bg-[#EAF7F0] text-[#167A4A] border border-[#167A4A]/20 shadow-2xs font-bold'
-                : 'text-[#66736B] hover:text-[#17201B] hover:bg-[#FBFDFB] border border-transparent'
-            }`
-          }
-        >
-          <FileText className="w-3.5 h-3.5" />
-          <span>{t('reports')}</span>
+          <span>Analyze</span>
         </NavLink>
 
         <NavLink
           to="/compare"
+          id="tour-compare"
           className={({ isActive }) =>
-            `flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            `flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
               isActive
                 ? 'bg-[#EAF7F0] text-[#167A4A] border border-[#167A4A]/20 shadow-2xs font-bold'
                 : 'text-[#66736B] hover:text-[#17201B] hover:bg-[#FBFDFB] border border-transparent'
@@ -110,6 +112,49 @@ export const MinimalHeader: React.FC = () => {
         >
           <GitCompare className="w-3.5 h-3.5" />
           <span>Compare</span>
+        </NavLink>
+
+        <NavLink
+          to="/history"
+          className={({ isActive }) =>
+            `flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+              isActive
+                ? 'bg-[#EAF7F0] text-[#167A4A] border border-[#167A4A]/20 shadow-2xs font-bold'
+                : 'text-[#66736B] hover:text-[#17201B] hover:bg-[#FBFDFB] border border-transparent'
+            }`
+          }
+        >
+          <Clock className="w-3.5 h-3.5" />
+          <span>History</span>
+        </NavLink>
+
+        <NavLink
+          to="/reports"
+          className={({ isActive }) =>
+            `flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+              isActive
+                ? 'bg-[#EAF7F0] text-[#167A4A] border border-[#167A4A]/20 shadow-2xs font-bold'
+                : 'text-[#66736B] hover:text-[#17201B] hover:bg-[#FBFDFB] border border-transparent'
+            }`
+          }
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Reports</span>
+        </NavLink>
+
+        <NavLink
+          to="/collaborate"
+          id="tour-collaborate"
+          className={({ isActive }) =>
+            `flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+              isActive
+                ? 'bg-[#EAF7F0] text-[#167A4A] border border-[#167A4A]/20 shadow-2xs font-bold'
+                : 'text-[#66736B] hover:text-[#17201B] hover:bg-[#FBFDFB] border border-transparent'
+            }`
+          }
+        >
+          <Users className="w-3.5 h-3.5" />
+          <span>Collaborate</span>
         </NavLink>
       </nav>
 

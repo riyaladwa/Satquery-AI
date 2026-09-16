@@ -12,6 +12,7 @@ interface CleanMapProps {
   selectedEvidenceId?: string | null;
   onSelectEvidence?: (id: string) => void;
   className?: string;
+  userLocation?: { lat: number; lng: number; name?: string } | null;
 }
 
 export const CleanMap: React.FC<CleanMapProps> = ({
@@ -20,7 +21,8 @@ export const CleanMap: React.FC<CleanMapProps> = ({
   evidenceRegions = [],
   selectedEvidenceId,
   onSelectEvidence,
-  className = ''
+  className = '',
+  userLocation
 }) => {
   const { trackCapability } = useAuth();
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -30,6 +32,7 @@ export const CleanMap: React.FC<CleanMapProps> = ({
   const secondaryOverlayRef = useRef<L.ImageOverlay | null>(null);
   const vectorGroupRef = useRef<L.FeatureGroup | null>(null);
   const measureGroupRef = useRef<L.FeatureGroup | null>(null);
+  const userLocationGroupRef = useRef<L.FeatureGroup | null>(null);
   const lastFittedImageIdRef = useRef<string | null>(null);
 
   const [mouseCoords, setMouseCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -87,6 +90,7 @@ export const CleanMap: React.FC<CleanMapProps> = ({
 
     vectorGroupRef.current = L.featureGroup().addTo(map);
     measureGroupRef.current = L.featureGroup().addTo(map);
+    userLocationGroupRef.current = L.featureGroup().addTo(map);
 
     // Zoom controls top right
     L.control.zoom({ position: 'topright' }).addTo(map);
@@ -232,6 +236,49 @@ export const CleanMap: React.FC<CleanMapProps> = ({
       container.style.cursor = '';
     }
   }, [isInspecting, isMeasuring]);
+
+  // Synchronize userLocation center and marker
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !userLocation) return;
+
+    map.flyTo([userLocation.lat, userLocation.lng], 13, { duration: 1.2 });
+
+    if (userLocationGroupRef.current) {
+      userLocationGroupRef.current.clearLayers();
+
+      // Outer pulsing halo
+      const halo = L.circleMarker([userLocation.lat, userLocation.lng], {
+        radius: 22,
+        color: '#167A4A',
+        fillColor: '#167A4A',
+        fillOpacity: 0.16,
+        weight: 1.5
+      });
+
+      // Center point pin
+      const pin = L.circleMarker([userLocation.lat, userLocation.lng], {
+        radius: 7,
+        color: '#FFFFFF',
+        fillColor: '#167A4A',
+        fillOpacity: 1,
+        weight: 2.5
+      });
+
+      pin.bindTooltip(
+        `<div style="font-family: sans-serif; font-size: 11px; font-weight: 600; padding: 2px;">
+           <div style="color: #167A4A;">📍 ${userLocation.name || 'Selected Location'}</div>
+           <div style="font-size: 10px; color: #66736B; font-family: monospace;">
+             ${userLocation.lat.toFixed(4)}°N, ${userLocation.lng.toFixed(4)}°E
+           </div>
+         </div>`,
+        { permanent: false, sticky: true }
+      );
+
+      userLocationGroupRef.current.addLayer(halo);
+      userLocationGroupRef.current.addLayer(pin);
+    }
+  }, [userLocation]);
 
   // Clear measurement tool
   const handleClearMeasurement = () => {

@@ -168,12 +168,73 @@ export interface TimeSeriesData {
 }
 
 
+export interface ProjectCollaborator {
+  id: number;
+  user_email: string;
+  user_name?: string;
+  role: 'owner' | 'collaborator' | 'viewer';
+  created_at: string;
+}
+
+export interface ProjectActivity {
+  id: number;
+  user_name: string;
+  action: string;
+  details?: string;
+  created_at: string;
+}
+
 export interface Project {
   id: number;
   name: string;
   description?: string;
   created_at: string;
+  updated_at?: string;
   image_count: number;
+  analysis_count?: number;
+  collaborator_count?: number;
+  satellite_data?: string;
+  period?: string;
+  aoi?: string;
+  status?: string;
+}
+
+export interface ProjectDetail extends Project {
+  images: ImageRecord[];
+  analyses: {
+    id: string;
+    title: string;
+    analysis_type: string;
+    created_at: string;
+    summary: string;
+    confidence: number;
+    model_name: string;
+  }[];
+  collaborators: ProjectCollaborator[];
+  activities: ProjectActivity[];
+  share_token?: string;
+}
+
+export interface AssistantChatResponse {
+  reply: string;
+  action_links: { label: string; to: string }[];
+  source: string;
+}
+
+export interface ComparisonMajorChange {
+  category: string;
+  finding: string;
+  magnitude: string;
+}
+
+export interface ComparisonExplanation {
+  summary: string;
+  major_changes: ComparisonMajorChange[];
+  spatial_details: string;
+  temporal_details: string;
+  possible_interpretation: string;
+  evidence: string;
+  limitations: string;
 }
 
 export interface AreaCalculationResult {
