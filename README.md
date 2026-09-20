@@ -1,5 +1,6 @@
 # 🛰️ SatQuery AI — Full-Stack Geospatial Vision-Language Workstation
-**Smart India Hackathon (SIH 2026 Edition)**
+
+> An interactive Vision-Language intelligence platform for multimodal remote sensing image analysis through natural language text and voice queries. Designed and developed by **Riya P Ladwa**.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
@@ -9,13 +10,109 @@
 [![ISRO Compliance](https://img.shields.io/badge/Quality_Checks-7_Gate_ISRO_Standard-orange.svg)]()
 [![Tests](https://img.shields.io/badge/Tests-19%2F19_Passed-brightgreen.svg)]()
 
-> **An Interactive Vision-Language Assistant for Multimodal Remote Sensing Image Analysis through Natural Language Text and Voice Queries.**
+---
 
-SatQuery AI is an end-to-end, production-grade geospatial intelligence workstation combining multimodal satellite imagery (Optical, Multispectral, and Synthetic Aperture Radar), agentic task orchestration, specialized AI models, interactive Leaflet mapping with real-time geodesic calculations, bi-temporal change detection, multi-turn persistent conversation threads, and publication-grade PDF intelligence reports.
+## Overview
+
+**SatQuery AI** is an end-to-end, production-grade geospatial intelligence workstation that unifies multimodal satellite imagery (Optical, Multispectral, and Synthetic Aperture Radar) with agentic vision-language AI. It enables users to query complex Earth observation scenes using natural language (text or voice in English, Hindi, and Kannada), inspect pixel-level spectral reflectance, calculate real-time geodesic areas, detect bi-temporal environmental changes, and generate publication-grade intelligence reports.
+
+### The Problem It Solves
+Traditional Geographic Information Systems (GIS) such as QGIS or ArcGIS require specialized domain knowledge in band math, manual index computations (NDVI, NDWI, NDBI), and cumbersome desktop processing workflows. On the other hand, general multimodal LLMs lack spatial calibration, georeferencing awareness, and radiometric validation, often hallucinating geographical findings.
+
+SatQuery AI bridges this gap by combining:
+* Automated geospatial raster parsing (GeoTIFF, CRS, sub-pixel georeferencing).
+* An agentic reasoning pipeline paired with an 8-model specialized registry for zero black-box explainability.
+* Rigorous ISRO-compliant 7-gate input verification to ensure data integrity before inference.
+* An interactive, browser-based GIS workstation equipped with live geodesic drawing tools and multi-temporal change detection.
 
 ---
 
-## 🧭 System Architecture & Agentic Flow
+## Key Features
+
+### 🛰️ Multimodal Satellite Ingestion & Inspection
+* **Format Support**: Ingests GeoTIFF (`.tif`, `.tiff`), PNG, and JPEG formats.
+* **Automated Metadata Extraction**: Extracts Coordinate Reference System (CRS `EPSG:4326` / `EPSG:3857`), ground sampling distance (GSD), raster dimensions, spectral bands, acquisition date, and sensor platform.
+* **Sensor Compatibility**: Pre-configured pipelines for **Sentinel-2 MSI**, **Sentinel-1 C-SAR (Microwave Radar)**, **Landsat-9 OLI-2**, **Cartosat-3**, and **PlanetScope SuperDove**.
+
+### 🛡️ 7-Gate Input Quality Verification (ISRO Compliance Standard)
+Before executing any AI model, incoming rasters undergo 7 automated quality checks:
+1. **Format Integrity**: Validates container headers and raster byte structure.
+2. **Georeferencing**: Ensures tie points or affine transformation matrices exist.
+3. **CRS Projection**: Confirms valid projection against global and regional ellipsoids.
+4. **Cloud Coverage**: Validates atmospheric occlusion to prevent clouded scenes from producing false classifications.
+5. **Dynamic Contrast & Dynamic Range**: Measures radiometric histogram spread (0–100 score).
+6. **Resolution & Spatial Consistency**: Asserts spatial ground sampling distance feasibility.
+7. **Radiometric Bit-Depth**: Confirms multi-band radiometric fidelity.
+
+### 🎯 Transparent & Auditable Intelligence (Zero Black Box)
+Every analysis provides a complete explainability package:
+* **WHAT**: Concrete natural language finding and target breakdown.
+* **WHERE**: High-resolution vector polygons and bounding boxes overlaid on the interactive map.
+* **WHY TRUST IT**: Radiometric verification, sub-pixel alignment, and multi-band spectral reflectance.
+* **HOW**: Specialist model identity selected from the model registry.
+* **HOW CERTAIN**: Model Confidence Score (%) coupled with an independent Data Reliability Score (*High*, *Medium*, *Low*).
+* **EXECUTION TIMELINE**: Millisecond-precision audit trail tracking each step (Query &rarr; Task &rarr; Validation &rarr; Specialist Model &rarr; Spatial Grounding &rarr; Calibrated Localized Answer).
+
+### 🗺️ Interactive Leaflet GIS Workstation
+* **Dual Basemaps**: Toggle between high-resolution Esri World Imagery and clean Carto Light vector streets.
+* **Pixel Inspector**: Click anywhere on the satellite raster to sample multi-band reflectance (Red, Green, Blue, NIR, SWIR-1, SWIR-2), NDVI, NDWI, NDBI, surface temperature, and land cover classification.
+* **Real-Time Geodesic Area Measurement**: Interactive polygon drawing tool powered by PyProj WGS84 Geod computing area in **m²**, **km²**, **hectares**, and **acres** along with perimeter.
+
+### 🔄 Bi-Temporal Change Detection & Multi-Sensor Comparison
+* **Bi-Temporal Difference Mapping**: Interactive swipe slider comparing historical vs. current acquisitions (e.g., 2023 vs. 2026) with changed area deltas, concrete sprawl metrics, and change heatmaps.
+* **Optical + SAR Dual-Stream Fusion**: Joint analysis combining Sentinel-2 optical bands with Sentinel-1 microwave radar backscatter, explaining cloud penetration, moisture dielectric returns, and sensor consensus %.
+
+### 🗣️ Multilingual & Voice Accessibility
+* **Native Languages**: Full support for **English**, **हिन्दी (Hindi)**, and **ಕನ್ನಡ (Kannada)**.
+* **Voice Dictation**: Hands-free natural language queries using Web Speech API speech recognition.
+* **Voice Playback**: Integrated SpeechSynthesis engine providing native audio playback of AI answers.
+
+### 💾 Multi-Turn Session Persistence & Workspace Resumption
+* All user sessions and multi-question conversation threads are persistently recorded in the SQLite / PostgreSQL database.
+* The **History** view allows browsing past analyses, deleting records, or clicking **"Resume in Workspace"** to restore questions, answers, and spatial evidence overlays into the live map workstation.
+
+### 📄 Publication-Grade PDF Reporting
+* Integrated ReportLab GIS engine that generates formal PDF intelligence reports complete with executive summaries, acquisition metadata, spatial coordinates tables, and verified execution audit trails.
+
+### ⚡ Enterprise Persistence & Auth (Supabase Integration)
+* **11 Relational Tables**: Full schema with Row-Level Security (RLS) and automatic user sync triggers.
+* **Cloud Storage**: Dedicated bucket (`satellite-images`) for rasters, previews, and compiled PDF reports.
+* **Guest Capability Policy**: Unauthenticated guests can test up to 2 free capabilities before being prompted to sign in for unlimited access.
+
+---
+
+## Technologies Used
+
+| Layer | Technologies & Tools |
+| :--- | :--- |
+| **Frontend UI** | React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons, Recharts, Axios |
+| **GIS & Mapping** | Leaflet 1.9, Esri World Imagery, OpenStreetMap, CARTO Light, GeoJSON |
+| **Speech & Audio** | Web Speech API (Speech Recognition), SpeechSynthesis API, i18next |
+| **Backend API** | Python 3.12, FastAPI, Pydantic v2, Uvicorn, SQLAlchemy |
+| **Geospatial & Vector Core** | NumPy, Pillow, Tifffile, Shapely, PyProj (WGS84 Geod) |
+| **Document Generation** | ReportLab PDF Intelligence Engine |
+| **Database & Cloud Storage** | SQLite (zero-config local) / Supabase (PostgreSQL + S3 Storage + Auth) |
+| **Deployment** | Vercel (unified serverless reverse proxy), Render / Railway ready |
+| **Testing** | Pytest, TypeScript Compiler (`tsc`), Vite Build |
+
+### Specialist AI Model Registry
+
+| Model Name | Version | Primary Task | Supported Modalities | Base Confidence |
+| :--- | :--- | :--- | :--- | :--- |
+| **SatQuery RS-VLM Specialist** | `v2.1` | General Captioning & VQA | Optical, Multispectral | 94.0% |
+| **GeoGrounder-Pro Spatial Segmentor** | `v1.8` | Text-Guided Target Grounding | Optical, Multispectral | 93.5% |
+| **Bi-Temporal ChangeNet Engine** | `v2.0` | Multi-Temporal Change Detection | Bi-temporal Optical | 91.2% |
+| **LandCover-7 Semantic UNet** | `v3.0` | 7-Class Surface Classification | Multispectral (12-Band) | 92.8% |
+| **Optical-SAR Dual Fusion Engine** | `v1.5` | Cross-Sensor Radar Fusion | Optical + C-SAR Radar | 90.5% |
+| **FloodInundation RapidNet** | `v2.2` | Emergency Disaster Response | SAR & Optical | 95.8% |
+| **AgriCanopy VigorNet** | `v1.9` | NDVI Crop & Moisture Surveillance | Sentinel-2 Red-Edge/NIR | 93.2% |
+| **UrbanSprawl GrowthNet** | `v2.4` | Concrete & Arterial Expansion | Bi-temporal Optical | 91.8% |
+
+---
+
+## How It Works
+
+### Architectural Overview
 
 ```mermaid
 flowchart TD
@@ -61,37 +158,49 @@ flowchart TD
     Gateway <--> Database
 ```
 
+### End-to-End Processing Workflow
+1. **Raster Ingestion & Validation**: A satellite scene is selected or uploaded. The backend validates raster integrity, CRS coordinates, and cloud cover against the 7-gate quality protocol.
+2. **Natural Language Understanding**: Natural language input (typed or captured via speech dictation in English, Hindi, or Kannada) is classified by intent, target phenomena, and required sensor modality.
+3. **Agentic Dispatch & Model Execution**: The orchestrator routes the task to the designated specialist model (e.g., LandCover UNet, GeoGrounder-Pro, or ChangeNet) for inference.
+4. **Spatial Grounding & Spectral Sampling**: Results are converted into GeoJSON vector geometries with calibrated pixel coordinates and spectral index values.
+5. **Geodesic Calculation**: The PyProj WGS84 Geod engine computes true geodesic areas and perimeters.
+6. **Persistence & Export**: The entire conversation thread, spatial evidence, and metrics are stored in the database and can be exported as a publication-ready PDF intelligence report.
+
 ---
 
-## 📂 Repository Hierarchy
-
-The repository follows a clean, single-root full-stack structure:
+## Project Structure
 
 ```text
 Satquery-AI/
 ├── public/                  # Public static assets (favicons, SVGs)
 ├── server/                  # FastAPI Python backend
 │   ├── app/                 # API routers, agents, database, geospatial engines
-│   ├── tests/               # Pytest test suite
+│   │   ├── core/            # Configuration and database models
+│   │   ├── routers/         # REST endpoints (/analyze, /compare, /reports, etc.)
+│   │   └── services/        # Raster parsing, quality gates, PDF generation
+│   ├── tests/               # Pytest automated test suite
 │   ├── requirements.txt     # Python backend dependencies
 │   └── main.py              # Server entry point & ASGI application
 ├── src/                     # React 19 + TypeScript + Vite frontend
-│   ├── components/          # Leaflet maps, workstation drawers, modals
+│   ├── components/          # Leaflet maps, workstation drawers, modals, header
 │   ├── pages/               # Workstation, Explore, Compare, MyWork, Reports
-│   ├── services/            # Axios API client & asset resolver
-│   ├── types/               # TypeScript data models
+│   ├── services/            # Axios API client, Supabase client, asset resolver
+│   ├── types/               # TypeScript data models and interfaces
 │   └── App.tsx              # Main application shell & router
-├── data/                    # GeoTIFF satellite rasters & demo data
-│   └── demo/                # Multi-sensor satellite rasters
+├── data/                    # Geospatial rasters, previews, and database
+│   ├── demo/                # Multi-sensor satellite GeoTIFFs
+│   ├── previews/            # Generated RGB preview rasters
+│   └── reports/             # Compiled PDF intelligence reports
 ├── .env.example             # Environment variables template
 ├── .gitignore
 ├── LICENSE                  # MIT License
-├── README.md                # Documentation & architecture
-├── dev.sh                   # Concurrent local runner
+├── README.md                # Project documentation
+├── dev.sh                   # Concurrent local runner script
 ├── index.html               # Frontend HTML root
 ├── package.json             # Root npm dependencies & build scripts
 ├── package-lock.json
 ├── requirements.txt         # Root Python requirements
+├── supabase_schema.sql      # Supabase PostgreSQL schema with RLS & triggers
 ├── tsconfig.json            # TypeScript configuration
 ├── vercel.json              # Unified Vercel serverless reverse proxy
 └── vite.config.ts           # Vite configuration & dev proxy
@@ -99,93 +208,14 @@ Satquery-AI/
 
 ---
 
-## 🌟 Core Capabilities & Innovations
-
-
-### 1. 🛰️ Multimodal Satellite Ingestion & Inspection
-- **Supported Formats**: Ingests GeoTIFF (`.tif`, `.tiff`), PNG, and JPEG.
-- **Automated Metadata Extraction**: Extracts coordinate reference system (CRS `EPSG:4326`/`3857`), ground sampling distance (GSD), raster dimensions, spectral bands, acquisition date, and sensor platform.
-- **Sensor Coverage**: Pre-configured support for **Sentinel-2 MSI**, **Sentinel-1 C-SAR (Microwave Radar)**, **Landsat-9 OLI-2**, **Cartosat-3 High-Res**, and **PlanetScope SuperDove**.
-
-### 2. 🛡️ 7-Gate Input Quality Verification (ISRO Compliance)
-Before any model execution, rasters are verified against 7 rigorous automated gates:
-1. **Format Integrity**: Validates container headers and file byte structures.
-2. **Georeferencing**: Ensures tie points or affine transformation matrices exist.
-3. **CRS Projection**: Confirms valid projection in standard global or regional ellipsoids.
-4. **Cloud Coverage**: Threshold validation prevents clouded imagery from false classifications.
-5. **Dynamic Contrast & Dynamic Range**: Verifies radiometric histogram spread (0–100 score).
-6. **Resolution & Sampling Consistency**: Asserts spatial ground sampling distance feasibility.
-7. **Radiometric Bit-Depth**: Confirms multi-band radiometric fidelity.
-
-### 3. 🎯 Transparent & Auditable Intelligence (No Black Box)
-Every analysis provides a complete explainability package:
-- **WHAT**: Concrete natural language finding and target breakdown.
-- **WHERE**: High-resolution vector polygons and bounding boxes overlaid on the interactive map.
-- **WHY TRUST IT**: Radiometric verification, sub-pixel alignment, and multi-band spectral reflectance.
-- **HOW**: Tool and specialist AI model identity selected from the model registry.
-- **HOW CERTAIN**: Model Confidence Score (%) coupled with an independent Data Reliability Score (*High*, *Medium*, *Low*).
-- **EXECUTION TIMELINE**: Millisecond-precision audit trail tracking each step (Query &rarr; Task &rarr; Validation &rarr; Specialist Model &rarr; Spatial Grounding &rarr; Calibrated Localized Answer).
-
-### 4. 🗺️ Interactive Leaflet GIS Workstation
-- **Basemaps**: Toggle between high-resolution Esri World Imagery and clean Carto light vector streets.
-- **Pixel Inspector**: Click anywhere on the satellite raster to sample multi-band reflectance (Red, Green, Blue, NIR, SWIR-1, SWIR-2), NDVI, NDWI, NDBI, surface temperature, and land cover classification.
-- **Real-Time Geodesic Area Calculation**: Interactive polygon drawing tool powered by PyProj WGS84 Geod computing area in **m²**, **km²**, **hectares**, and **acres** along with perimeter.
-
-### 5. 🔄 Bi-Temporal Change Detection & Multi-Sensor Comparison
-- **Bi-Temporal Difference Mapping**: Interactive swipe slider comparing historical vs current acquisitions (e.g. 2023 vs 2026) with changed area deltas, concrete sprawl metrics, and change heatmaps.
-- **Optical + SAR Dual-Stream Fusion**: Joint analysis combining Sentinel-2 optical bands with Sentinel-1 microwave radar backscatter, explaining cloud penetration, moisture dielectric returns, and sensor consensus %.
-
-### 6. 🗣️ Multilingual & Voice Accessibility
-- **Native Languages**: Full support for **English**, **हिन्दी (Hindi)**, and **ಕನ್ನಡ (Kannada)**.
-- **Voice Dictation**: Hands-free natural language queries using Web Speech API speech recognition.
-- **Voice Playback**: Integrated SpeechSynthesis engine providing native audio playback of AI answers.
-
-### 7. 💾 Multi-Turn Session Persistence & Workspace Resumption
-- All user sessions and multi-question conversation threads are persistently recorded in the SQLite database.
-- The **History** view allows browsing past analyses, deleting records, or clicking **"Resume in Workspace"** to restore questions, answers, and spatial evidence overlays into the live workstation.
-
-### 8. 📄 Publication-Grade PDF Reporting
-- Integrated ReportLab GIS engine that generates formal PDF intelligence reports complete with executive summaries, acquisition metadata, spatial coordinates table, and verified execution audit trails.
-
----
-
-## 🤖 Specialist AI Model Registry
-
-| Model Name | Version | Primary Task | Supported Modalities | Base Confidence |
-| :--- | :--- | :--- | :--- | :--- |
-| **SatQuery RS-VLM Specialist** | `v2.1` | General Captioning & VQA | Optical, Multispectral | 94.0% |
-| **GeoGrounder-Pro Spatial Segmentor** | `v1.8` | Text-Guided Target Grounding | Optical, Multispectral | 93.5% |
-| **Bi-Temporal ChangeNet Engine** | `v2.0` | Multi-Temporal Change Detection | Bi-temporal Optical | 91.2% |
-| **LandCover-7 Semantic UNet** | `v3.0` | 7-Class Surface Classification | Multispectral (12-Band) | 92.8% |
-| **Optical-SAR Dual Fusion Engine** | `v1.5` | Cross-Sensor Radar Fusion | Optical + C-SAR Radar | 90.5% |
-| **FloodInundation RapidNet** | `v2.2` | Emergency Disaster Response | SAR & Optical | 95.8% |
-| **AgriCanopy VigorNet** | `v1.9` | NDVI Crop & Moisture Surveillance | Sentinel-2 Red-Edge/NIR | 93.2% |
-| **UrbanSprawl GrowthNet** | `v2.4` | Concrete & Arterial Expansion | Bi-temporal Optical | 91.8% |
-
----
-
-## 🛠️ Technology Stack
-
-| Layer | Technologies |
-| :--- | :--- |
-| **Frontend UI** | React 19, TypeScript, Vite, Tailwind CSS, Lucide Icons, Recharts, Axios |
-| **GIS & Mapping** | Leaflet 1.9, Esri World Imagery, OpenStreetMap, CARTO Light |
-| **Internationalization** | i18next, Web Speech API (Dictation), Web Speech Synthesis (Audio Playback) |
-| **Backend API** | Python 3.12, FastAPI, Pydantic v2, Uvicorn, SQLAlchemy |
-| **Geospatial & Vector Core** | NumPy, Pillow, Tifffile, Shapely, PyProj (WGS84 Geod) |
-| **Document Generation** | ReportLab PDF Intelligence Engine |
-| **Database** | SQLite (Default, Zero-Config) / PostgreSQL-ready SQLAlchemy Schema |
-
----
-
-## 🚀 Quick Start Guide
+## Installation & Setup
 
 ### Prerequisites
-- **Node.js**: v18+ and npm
-- **Python**: 3.10+ (Python 3.12 recommended)
+* **Node.js**: v18+ and npm
+* **Python**: 3.10+ (Python 3.12 recommended)
 
-### Option A: One-Command Full-Stack Launch (Recommended)
-We provide a unified runner script that sets up dependencies, checks the database, and launches both FastAPI and Vite dev servers concurrently:
+### Option A: One-Command Concurrent Launch (Recommended)
+This repository includes a unified runner script that sets up dependencies, checks the database, and launches both FastAPI and Vite dev servers concurrently:
 
 ```bash
 # Clone the repository
@@ -198,9 +228,9 @@ chmod +x dev.sh
 ```
 
 Once running:
-- **Frontend Workstation**: [http://localhost:5173](http://localhost:5173)
-- **FastAPI Interactive Docs (Swagger)**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- **API Health Check**: [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health)
+* **Frontend Workstation**: [http://localhost:5173](http://localhost:5173)
+* **FastAPI Swagger Docs**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+* **API Health Check**: [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health)
 
 ---
 
@@ -209,11 +239,12 @@ Once running:
 #### 1. Backend Setup
 ```bash
 # From repository root:
-source server/venv/bin/activate || python3 -m venv server/venv && source server/venv/bin/activate
+python3 -m venv server/venv
+source server/venv/bin/activate
 pip install -r requirements.txt
 
-# Run automated tests
-PYTHONPATH=server server/venv/bin/pytest server/tests/
+# Run automated backend test suite
+PYTHONPATH=server server/venv/bin/pytest server/tests/ -v
 
 # Start FastAPI server
 PYTHONPATH=server python3 server/main.py
@@ -228,89 +259,59 @@ npm run dev
 
 ---
 
-## ⚡ Supabase Database, Storage & Auth Integration
+### Supabase Cloud Setup (Optional)
+SatQuery AI includes zero-config local SQLite (`data/satquery.db`) out of the box. For cloud persistence, storage, and authentication with Supabase:
 
-SatQuery AI is integrated with **[Supabase](https://supabase.com)** to provide enterprise-grade persistence, cloud raster object storage, and secure user authentication:
-
-1. **Relational PostgreSQL Database**:
-   - 11 relational tables (`users`, `user_settings`, `projects`, `images`, `image_metadata`, `analysis_sessions`, `queries`, `analysis_results`, `evidence_regions`, `reports`, `model_runs`).
-   - Row-Level Security (RLS) policies on all tables.
-   - Automatic user synchronization trigger (`on_auth_user_created`) that links Supabase Auth accounts to `public.users` and initializes `public.user_settings`.
-
-2. **Cloud Storage Bucket (`satellite-images`)**:
-   - Used for raw satellite rasters (GeoTIFF/TIFF) and generated RGB previews.
-   - Used for permanent storage and delivery of compiled PDF intelligence reports.
-   - Public read access for client map rendering and secure upload policies for backend and authenticated users.
-
-3. **Guest Capability Policy (2 Free Capabilities & Report Download Protection)**:
-   - Unauthenticated guest visitors can explore the platform and use up to **2 free capabilities** (e.g. asking an AI query, inspecting pixel reflectance, measuring geodesic area, opening comparison drawers).
-   - If a guest attempts a **3rd capability** or attempts to **download any generated intelligence report**, the platform prompts them to sign in or create an account via the integrated Supabase Auth modal.
-   - Once authenticated, users receive unlimited access to all GIS workstation capabilities and PDF report downloads.
-
-### Quick Supabase Setup Steps
-
-1. **Run Database Migration Script**:
-   - Open your Supabase project dashboard and navigate to the **SQL Editor**.
-   - Copy the contents of [`supabase_schema.sql`](supabase_schema.sql) and click **Run**.
-   - This creates all 11 tables, indexes, RLS policies, the `satellite-images` storage bucket, and the user sync trigger.
-
-2. **Configure Environment Variables (`.env`)**:
-   ```bash
-   # Frontend Supabase keys (public/anon)
+1. **Apply Schema**: Copy the contents of [`supabase_schema.sql`](supabase_schema.sql) and run it in your Supabase SQL Editor.
+2. **Configure `.env`**:
+   ```env
+   # Frontend (public)
    VITE_SUPABASE_URL=https://your-project.supabase.co
    VITE_SUPABASE_ANON_KEY=your-anon-or-publishable-key
 
-   # Backend Supabase keys (secure server-side)
+   # Backend (secure)
    SUPABASE_URL=https://your-project.supabase.co
    SUPABASE_ANON_KEY=your-anon-or-publishable-key
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-secret-key
    SUPABASE_STORAGE_BUCKET=satellite-images
-
-   # Supabase Database URI (PostgreSQL connection string from Project Settings -> Database)
    DATABASE_URL=postgresql://postgres.xxx:password@aws-0-region.pooler.supabase.com:6543/postgres
    ```
 
-3. **Graceful Fallback**:
-   - If Supabase environment variables are omitted, SatQuery AI automatically falls back to local SQLite (`data/satquery.db`) and local file storage, ensuring seamless offline development.
+---
+
+### Deployment on Vercel
+SatQuery AI is preconfigured for unified deployment on [Vercel](https://vercel.com):
+
+1. Import the repository into your Vercel dashboard.
+2. Set build command to `npm run build` and output directory to `dist`.
+3. Add environment variables if utilizing Supabase or Google Gemini API.
+4. Deploy — the frontend SPA and FastAPI serverless backend (`server/main.py`) run seamlessly under a single domain.
 
 ---
 
-## 🚀 Vercel Full-Stack Deployment
+## Usage
 
-SatQuery AI is preconfigured for **unified full-stack deployment** on [Vercel](https://vercel.com). Both the React 19 + Vite frontend and the FastAPI Python backend run together under a single domain.
+### 1. Navigating the Workstation
+* Open [http://localhost:5173](http://localhost:5173).
+* Select any pre-loaded satellite scene (e.g., Bengaluru Urban Expansion, Mumbai Coastal Radar, Kerala Flood Inundation) or upload a custom GeoTIFF/PNG image.
 
-### Architecture on Vercel
+### 2. Asking Vision-Language Queries
+* Type a natural language prompt in the query input (e.g., *"Identify urban encroachment near water bodies"* or *"What is the flood inundation percentage?"*).
+* Alternatively, click the microphone button to dictate queries in **English**, **Hindi**, or **Kannada**.
+* The response includes concrete answers, confidence scores, execution timelines, and vector polygon overlays on the map.
 
-```
-                               ┌─── /api/* ──────────► [server/main.py] (FastAPI Serverless)
-                               ├─── /previews/* ─────► [server/main.py] (Static Preview Rasters)
-User Request ──► [Vercel CDN] ─┼─── /reports-files/* ─► [server/main.py] (Generated PDFs)
-                               ├─── /docs ───────────► [server/main.py] (Swagger UI)
-                               └─── /* (All Others) ─► [dist/index.html] (React 19 SPA)
-```
+### 3. Pixel Inspection & Geodesic Measurement
+* Click the **Inspect Pixel** tool and click anywhere on the raster to sample raw multi-band reflectance, NDVI, NDWI, and land cover classification.
+* Select the **Draw Polygon** tool to outline an area of interest; the PyProj WGS84 Geod engine computes the exact ground area in square meters, hectares, and acres in real time.
 
-### Steps to Deploy on Vercel
+### 4. Bi-Temporal Change & Radar Fusion
+* Open the **Compare** drawer to slide between historical and recent acquisitions to view concrete sprawl metrics and difference heatmaps.
+* Switch to the **Optical-SAR** view to inspect radar backscatter returns through cloud-covered scenes.
 
-1. **Import Repository**:
-   - Go to your [Vercel Dashboard](https://vercel.com/new).
-   - Click **Import** on `https://github.com/riyaladwa/Satquery-AI.git`.
-2. **Project Settings**:
-   - **Framework Preset**: `Vite` (automatically detected)
-   - **Root Directory**: `./` (leave as root default)
-   - **Build Command**: `tsc -b && vite build` (or `npm run build`)
-   - **Output Directory**: `dist` (automatically detected via `vercel.json`)
-3. **Environment Variables (Optional)**:
-   - `GEMINI_API_KEY`: *(Optional)* Your Google Gemini Vision API key.
-   - `VITE_API_URL`: *(Optional)* Leave blank for unified same-domain deployment. Set to external URL (e.g. `https://my-backend.onrender.com`) if deploying the backend separately on Render or Railway.
-4. **Deploy**:
-   - Click **Deploy**. Vercel will build the frontend into `dist` and initialize the Python serverless function in `server/main.py`.
-   - Your frontend loads instantly at `https://<your-project>.vercel.app/` with live API calls routed to `/api/...`.
+### 5. Exporting PDF Reports
+* Click **Generate Report** to compile a formal, publication-ready PDF containing the executive summary, coordinate bounds, metadata, and verified execution audit trail.
 
----
-
-
-
-## 📡 REST API Reference
+### 6. REST API Reference
 
 | Endpoint | Method | Description |
 | :--- | :--- | :--- |
@@ -333,22 +334,37 @@ User Request ──► [Vercel CDN] ─┼─── /reports-files/* ─► [ser
 
 ---
 
-## 🧪 Automated Testing
+## Screenshots
 
-SatQuery AI includes unit, integration, and compliance test suites:
+### Multimodal Satellite Scenes & Analysis Previews
+Below are representative satellite scene previews and analysis rasters processed by SatQuery AI:
 
-```bash
-# Run all backend tests
-PYTHONPATH=backend backend/venv/bin/pytest backend/tests/ -v
-
-# Run frontend typecheck and build validation
-cd frontend && npm run build
-```
+| Scene / Modality | Sensor & Region | Description | Preview |
+| :--- | :--- | :--- | :--- |
+| **Optical Urban Monitoring** | Sentinel-2 MSI (Bengaluru) | High-resolution multispectral optical scene used for urban growth and canopy surveillance. | ![Bengaluru Sentinel-2](data/previews/bengaluru_sentinel2_2026.png) |
+| **Synthetic Aperture Radar (SAR)** | Sentinel-1 C-SAR (Mumbai Coast) | Microwave radar backscatter capturing coastal waterline dynamics regardless of cloud cover. | ![Mumbai Coastal SAR](data/previews/mumbai_coastal_sentinel1_sar.png) |
+| **Disaster Response & Inundation** | Sentinel-1 / Optical Fusion (Kerala) | Flood extent mapping and submerged infrastructure delineation for emergency response. | ![Kerala Flood Aftermath](data/previews/kerala_flood_aftermath_2024.png) |
+| **Agricultural Health** | Sentinel-2 Red-Edge (Punjab) | Cropland canopy health and moisture surveillance using calibrated NDVI indices. | ![Punjab Cropland](data/previews/punjab_cropland_sentinel2.png) |
 
 ---
 
-## 👥 Contributors & Acknowledgements
-- **Team**: SatQuery AI Development Team
-- **Event**: Smart India Hackathon (SIH 2026 Edition)
-- **Data Providers**: European Space Agency (Copernicus Sentinel-1 & Sentinel-2), ISRO Bhuvan Open Data Architecture.
-- **License**: MIT License. Open-source and freely available for research and operational use.
+## Future Improvements
+
+* 🛰️ **Live STAC Catalog Ingestion**: Direct integration with Copernicus Data Space and USGS EarthExplorer via SpatioTemporal Asset Catalog (STAC) APIs for automated on-demand satellite scene retrieval.
+* 🧠 **Edge-Optimized RS-VLM Models**: Fine-tuning specialized open-source lightweight vision-language models (e.g., RemoteCLIP, GeoChat) converted to ONNX / TensorRT for sub-second offline edge inference.
+* 🌐 **3D Elevation & Terrain Modeling**: Integration of CesiumJS / MapLibre 3D with Copernicus 30m Digital Elevation Models (DEM) for topographic flood simulation and slope analysis.
+* 🔔 **Autonomous Geospatial Alerting**: Scheduled geo-fencing cron jobs monitoring critical zones for unauthorized deforestation, reservoir depletion, or rapid urban sprawl with automated webhook notifications.
+* 📦 **Containerized Field Appliance**: Multi-arch Docker images tailored for edge hardware (such as NVIDIA Jetson) for field operators without internet connectivity.
+
+---
+
+## Developer
+
+**Riya P Ladwa**
+* GitHub: [https://github.com/riyaladwa](https://github.com/riyaladwa)
+
+---
+
+## License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
